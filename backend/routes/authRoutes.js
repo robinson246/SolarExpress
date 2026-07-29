@@ -1,0 +1,21 @@
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const { signup, login, logout, me } = require('../controllers/authController');
+const { requireAuth } = require('../middleware/requireAuth');
+
+const router = express.Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post('/signup', authLimiter, signup);
+router.post('/login', authLimiter, login);
+router.post('/logout', logout);
+router.get('/me', requireAuth, me);
+
+module.exports = router;

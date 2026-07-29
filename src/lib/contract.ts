@@ -1,0 +1,479 @@
+export const TICKET_SALE_ADDRESS = (process.env.NEXT_PUBLIC_TICKET_SALE_ADDRESS || '0x9108a57EF02A3e9486E62C7cb4bcEb49D735e86f') as `0x${string}`;
+export const TICKET_NFT_ADDRESS = (process.env.NEXT_PUBLIC_TICKET_NFT_ADDRESS || '0xEe0fE93b4CC7017Eb9062b7B07ff00ECd92793d7') as `0x${string}`;
+export const BOOKING_HISTORY_ADDRESS = (process.env.NEXT_PUBLIC_BOOKING_HISTORY_ADDRESS || '0xC1D9a31Ef26b0f4E15C5366fD65C3116AB7AF5EF') as `0x${string}`;
+
+export const TICKET_SALE_ABI = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'ticketContractAddress', type: 'address', internalType: 'address' },
+      { name: 'bookingHistoryAddress', type: 'address', internalType: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'buyTicket',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+      { name: 'metadataURI', type: 'string', internalType: 'string' },
+    ],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'destinationPrice',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'ticketContract',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'bookingHistory',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'setDestinationPrice',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+      { name: 'priceWei', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'setDestinationPrices',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'destinationIds', type: 'uint256[]', internalType: 'uint256[]' },
+      { name: 'pricesWei', type: 'uint256[]', internalType: 'uint256[]' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'withdraw',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'renounceOwnership',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'transferOwnership',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'newOwner', type: 'address', internalType: 'address' }],
+    outputs: [],
+  },
+  {
+    type: 'event',
+    name: 'TicketPurchased',
+    inputs: [
+      { name: 'tokenId', type: 'uint256', indexed: true, internalType: 'uint256' },
+      { name: 'buyer', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'destinationId', type: 'uint256', indexed: true, internalType: 'uint256' },
+      { name: 'pricePaid', type: 'uint256', indexed: false, internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true, internalType: 'address' },
+      { name: 'newOwner', type: 'address', indexed: true, internalType: 'address' },
+    ],
+  },
+] as const;
+
+export const TICKET_NFT_ABI = [
+  {
+    type: 'constructor',
+    inputs: [],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', name: 'ERC721IncorrectOwner', inputs: [{ name: 'sender', type: 'address' }, { name: 'tokenId', type: 'uint256' }, { name: 'owner', type: 'address' }] },
+  { type: 'error', name: 'ERC721InsufficientApproval', inputs: [{ name: 'operator', type: 'address' }, { name: 'tokenId', type: 'uint256' }] },
+  { type: 'error', name: 'ERC721InvalidApprover', inputs: [{ name: 'approver', type: 'address' }] },
+  { type: 'error', name: 'ERC721InvalidOperator', inputs: [{ name: 'operator', type: 'address' }] },
+  { type: 'error', name: 'ERC721InvalidOwner', inputs: [{ name: 'owner', type: 'address' }] },
+  { type: 'error', name: 'ERC721InvalidReceiver', inputs: [{ name: 'receiver', type: 'address' }] },
+  { type: 'error', name: 'ERC721InvalidSender', inputs: [{ name: 'sender', type: 'address' }] },
+  { type: 'error', name: 'ERC721NonexistentToken', inputs: [{ name: 'tokenId', type: 'uint256' }] },
+  { type: 'error', name: 'OwnableInvalidOwner', inputs: [{ name: 'owner', type: 'address' }] },
+  { type: 'error', name: 'OwnableUnauthorizedAccount', inputs: [{ name: 'account', type: 'address' }] },
+  {
+    type: 'event',
+    name: 'Approval',
+    inputs: [
+      { name: 'owner', type: 'address', indexed: true },
+      { name: 'approved', type: 'address', indexed: true },
+      { name: 'tokenId', type: 'uint256', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ApprovalForAll',
+    inputs: [
+      { name: 'owner', type: 'address', indexed: true },
+      { name: 'operator', type: 'address', indexed: true },
+      { name: 'approved', type: 'bool', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'BatchMetadataUpdate',
+    inputs: [
+      { name: '_fromTokenId', type: 'uint256', indexed: false },
+      { name: '_toTokenId', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'MetadataUpdate',
+    inputs: [{ name: '_tokenId', type: 'uint256', indexed: false }],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true },
+      { name: 'newOwner', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'TicketMinted',
+    inputs: [
+      { name: 'tokenId', type: 'uint256', indexed: true },
+      { name: 'buyer', type: 'address', indexed: true },
+      { name: 'destinationId', type: 'uint256', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'Transfer',
+    inputs: [
+      { name: 'from', type: 'address', indexed: true },
+      { name: 'to', type: 'address', indexed: true },
+      { name: 'tokenId', type: 'uint256', indexed: true },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address', internalType: 'address' },
+      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'owner', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'getApproved',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'isApprovedForAll',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address', internalType: 'address' },
+      { name: 'operator', type: 'address', internalType: 'address' },
+    ],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'mintTicket',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address', internalType: 'address' },
+      { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+      { name: 'metadataURI', type: 'string', internalType: 'string' },
+    ],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'name',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'string', internalType: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'ownerOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'renounceOwnership',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'safeTransferFrom',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address', internalType: 'address' },
+      { name: 'to', type: 'address', internalType: 'address' },
+      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'safeTransferFrom',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address', internalType: 'address' },
+      { name: 'to', type: 'address', internalType: 'address' },
+      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
+      { name: 'data', type: 'bytes', internalType: 'bytes' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'saleContract',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'setApprovalForAll',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'operator', type: 'address', internalType: 'address' },
+      { name: 'approved', type: 'bool', internalType: 'bool' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'setSaleContract',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_saleContract', type: 'address', internalType: 'address' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'supportsInterface',
+    stateMutability: 'view',
+    inputs: [{ name: 'interfaceId', type: 'bytes4', internalType: 'bytes4' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'symbol',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'string', internalType: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'tickets',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    outputs: [
+      { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+      { name: 'timestamp', type: 'uint256', internalType: 'uint256' },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'tokenURI',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'string', internalType: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'transferFrom',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address', internalType: 'address' },
+      { name: 'to', type: 'address', internalType: 'address' },
+      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'transferOwnership',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'newOwner', type: 'address', internalType: 'address' }],
+    outputs: [],
+  },
+] as const;
+
+export const BOOKING_HISTORY_ABI = [
+  {
+    type: 'constructor',
+    inputs: [],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', name: 'OwnableInvalidOwner', inputs: [{ name: 'owner', type: 'address' }] },
+  { type: 'error', name: 'OwnableUnauthorizedAccount', inputs: [{ name: 'account', type: 'address' }] },
+  {
+    type: 'event',
+    name: 'BookingRecorded',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'ticketId', type: 'uint256', indexed: true },
+      { name: 'destinationId', type: 'uint256', indexed: true },
+      { name: 'pricePaid', type: 'uint256', indexed: false },
+      { name: 'timestamp', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true },
+      { name: 'newOwner', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'getBooking',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'user', type: 'address', internalType: 'address' },
+      { name: 'index', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        internalType: 'struct BookingHistory.Booking',
+        components: [
+          { name: 'ticketId', type: 'uint256', internalType: 'uint256' },
+          { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+          { name: 'pricePaid', type: 'uint256', internalType: 'uint256' },
+          { name: 'timestamp', type: 'uint256', internalType: 'uint256' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'getBookings',
+    stateMutability: 'view',
+    inputs: [{ name: 'user', type: 'address', internalType: 'address' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple[]',
+        internalType: 'struct BookingHistory.Booking[]',
+        components: [
+          { name: 'ticketId', type: 'uint256', internalType: 'uint256' },
+          { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+          { name: 'pricePaid', type: 'uint256', internalType: 'uint256' },
+          { name: 'timestamp', type: 'uint256', internalType: 'uint256' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'owner',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'recordBooking',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'user', type: 'address', internalType: 'address' },
+      { name: 'ticketId', type: 'uint256', internalType: 'uint256' },
+      { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+      { name: 'pricePaid', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'renounceOwnership',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'saleContract',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'setSaleContract',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_saleContract', type: 'address', internalType: 'address' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'transferOwnership',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'newOwner', type: 'address', internalType: 'address' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'tripCount',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+] as const;

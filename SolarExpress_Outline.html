@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SolarExpress Project Outline</title>
+  <style>
+    :root {
+      --bg: #0a0f1f;
+      --panel: #111a33;
+      --ink: #eaf1ff;
+      --muted: #b6c4e2;
+      --accent: #5bd1ff;
+      --line: #2d3f6a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 10% 10%, #1a2750 0%, var(--bg) 45%), var(--bg);
+      line-height: 1.45;
+      padding: 40px;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, rgba(17,26,51,0.96), rgba(10,15,31,0.98));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 34px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 34px;
+      letter-spacing: 0.4px;
+    }
+
+    .subtitle {
+      color: var(--accent);
+      font-size: 15px;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 20px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 6px;
+    }
+
+    p { margin: 0 0 8px; color: var(--muted); }
+
+    ul, ol {
+      margin: 8px 0 10px 22px;
+      color: var(--ink);
+    }
+
+    li { margin: 6px 0; }
+
+    .section-note {
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(12, 19, 38, 0.65);
+    }
+
+    .footer {
+      margin-top: 22px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px dashed var(--line);
+      padding-top: 12px;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background: #0f172f;
+      }
+
+      .page {
+        max-width: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+      }
+
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>SolarExpress Project Outline</h1>
+    <div class="subtitle">Blockchain-based interplanetary ticketing with NASA Eyes-inspired 3D exploration</div>
+
+    <h2>1. Project Objective</h2>
+    <p>
+      Build a web application where users can explore the solar system in a cinematic 3D interface,
+      choose planets or moons as destinations, and purchase travel tickets using Ethereum.
+    </p>
+
+    <h2>2. Problem Statement</h2>
+    <p>
+      Conventional booking systems cannot provide transparent on-chain ownership for futuristic space tourism.
+      SolarExpress introduces a wallet-based purchase flow and verifiable ticket proof on blockchain.
+    </p>
+
+    <h2>3. Proposed Solution</h2>
+    <ul>
+      <li>Interactive 3D solar system map with clickable planets and moons.</li>
+      <li>Destination detail panel with travel package and ETH price.</li>
+      <li>Wallet connection (MetaMask) and Ethereum payment flow.</li>
+      <li>On-chain ticket proof through transaction hash (optional NFT extension).</li>
+    </ul>
+
+    <h2>4. MVP Features</h2>
+    <ul>
+      <li>Fullscreen 3D scene with orbits and object labels.</li>
+      <li>Planet selection and camera focus animation.</li>
+      <li>Side panel for destination details and booking controls.</li>
+      <li>Wallet connect and buy ticket on Sepolia testnet.</li>
+      <li>Purchase confirmation with transaction status and hash.</li>
+    </ul>
+
+    <h2>5. Tech Stack</h2>
+    <div class="grid">
+      <div class="card">
+        <strong>Frontend</strong>
+        <ul>
+          <li>Next.js + React</li>
+          <li>Three.js + React Three Fiber</li>
+          <li>State management for selection and booking UI</li>
+        </ul>
+      </div>
+      <div class="card">
+        <strong>Blockchain</strong>
+        <ul>
+          <li>Solidity smart contract (deployed via Remix)</li>
+          <li>wagmi + viem for wallet and contract calls</li>
+          <li>Sepolia testnet for demo transactions</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>6. System Flow</h2>
+    <ol>
+      <li>User explores the 3D solar system.</li>
+      <li>User selects destination (planet or moon).</li>
+      <li>User chooses ticket package and date.</li>
+      <li>User connects wallet and confirms ETH payment.</li>
+      <li>Contract emits purchase event and returns transaction hash.</li>
+      <li>App displays booking confirmation and ownership proof.</li>
+    </ol>
+
+    <h2>7. Evaluation Mapping</h2>
+    <ul>
+      <li><strong>Difficulty:</strong> real-time 3D UI plus blockchain transaction integration.</li>
+      <li><strong>Creativity:</strong> space tourism concept with immersive NASA-style navigation.</li>
+      <li><strong>Presentation:</strong> cinematic demo flow from exploration to payment confirmation.</li>
+      <li><strong>Individual:</strong> each member explains one subsystem deeply (3D, contract, UI, integration).</li>
+    </ul>
+
+    <h2>8. Scope and Limitations</h2>
+    <ul>
+      <li>Uses Sepolia testnet, not Ethereum mainnet.</li>
+      <li>Destination data and pricing are demo values in MVP.</li>
+      <li>Initial release prioritizes interaction and payment proof over complete orbital realism.</li>
+    </ul>
+
+    <h2>9. Future Enhancements</h2>
+    <ul>
+      <li>NFT ticket minting for each booking.</li>
+      <li>Dynamic pricing by demand and launch window.</li>
+      <li>User booking history and loyalty rewards.</li>
+      <li>Expansion to Ethereum Layer 2 for lower gas fees.</li>
+    </ul>
+
+    <h2>10. Foundation Implementation Plan</h2>
+    <ol>
+      <li>Create Next.js project and install Three.js, React Three Fiber, wagmi, viem.</li>
+      <li>Implement 3D solar system scene with selectable planets.</li>
+      <li>Build destination panel and ticket booking UI.</li>
+      <li>Deploy minimal buyTicket contract from Remix to Sepolia.</li>
+      <li>Integrate wallet connect and contract purchase flow.</li>
+      <li>Add README, screenshots, and demo transaction links for GitHub.</li>
+    </ol>
+
+    <p class="footer">
+      Prepared for school final project submission. Date: 2026-07-22.
+    </p>
+  </main>
+</body>
+</html>
