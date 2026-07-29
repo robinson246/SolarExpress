@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useModalOpen } from '@/lib/modal-context';
 
 interface ModalProps {
   open: boolean;
@@ -13,11 +14,16 @@ interface ModalProps {
 export default function Modal({ open, onClose, children, maxWidth = 'max-w-lg' }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const { setModalOpen } = useModalOpen();
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    setModalOpen(open);
+  }, [open, setModalOpen]);
 
   useEffect(() => {
     if (!open) return;
