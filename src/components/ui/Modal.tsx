@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useEffect, type ReactNode } from 'react';
+import { useRef, useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
   open: boolean;
@@ -11,6 +12,12 @@ interface ModalProps {
 
 export default function Modal({ open, onClose, children, maxWidth = 'max-w-lg' }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -19,12 +26,12 @@ export default function Modal({ open, onClose, children, maxWidth = 'max-w-lg' }
     return () => window.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
-      className='fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8'
+      className='fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-8'
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div className='absolute inset-0 bg-[#09090b]/95 animate-modal-fade' />
@@ -40,6 +47,7 @@ export default function Modal({ open, onClose, children, maxWidth = 'max-w-lg' }
         </button>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

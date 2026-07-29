@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useConnection } from 'wagmi';
 import { useAuth } from '@/lib/auth-context';
 import { useBuyTicket, type TicketStep } from '@/hooks/useBuyTicket';
@@ -274,8 +275,8 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
       </button>
 
       {/* ─── WIZARD MODAL ─── */}
-      {wizardOpen && (
-        <div className='fixed inset-0 z-50 flex items-start sm:items-center justify-center p-0 sm:p-4' onClick={handleCloseWizard}>
+      {wizardOpen && createPortal(
+        <div className='fixed inset-0 z-[9999] flex items-start sm:items-center justify-center p-0 sm:p-4' onClick={handleCloseWizard}>
           <div className='absolute inset-0 bg-[#09090b]/95 animate-modal-fade' />
           <div
             className='relative w-full sm:max-w-xl max-h-full sm:max-h-[90vh] overflow-y-auto overflow-x-hidden animate-modal-scale bg-gray-900/95 backdrop-blur-xl border border-gray-700/60 shadow-2xl shadow-black/50 sm:rounded-2xl'
@@ -735,7 +736,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </>
   );
 }
