@@ -1,8 +1,9 @@
 ﻿'use client';
 
+import { useSyncExternalStore } from 'react';
 import { Html } from '@react-three/drei';
 import { Body } from '@/data/bodies';
-import { useModalOpen } from '@/lib/modal-context';
+import { getIsModalOpen, subscribe } from '@/lib/modal-store';
 import Earth from './Earth';
 import PlanetRenderer from './PlanetRenderer';
 
@@ -16,7 +17,7 @@ interface PlanetProps {
 const Planet: React.FC<PlanetProps> = ({ body, isFocused, position, onClick }) => {
   const size = body.type === 'planet' ? 0.5 : 0.3;
   const scale = isFocused ? 1.4 : 1;
-  const { isModalOpen } = useModalOpen();
+  const isModalOpen = useSyncExternalStore(subscribe, getIsModalOpen, () => false);
 
   // Earth renders its own multi-layer stack
   if (body.id === 3) {

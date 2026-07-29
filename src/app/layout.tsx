@@ -5,7 +5,6 @@ import Web3Provider from "@/components/wallet/Web3Provider";
 import { AuthProvider } from "@/lib/auth-context";
 import { NotificationProvider } from "@/lib/notification-context";
 import { LoadingProvider } from "@/lib/loading-context";
-import { ModalProvider } from "@/lib/modal-context";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 
 const geistSans = Geist({
@@ -41,10 +40,8 @@ export default function RootLayout({
           <AuthProvider>
             <LoadingProvider>
               <NotificationProvider>
-                <ModalProvider>
-                  {children}
-                  <MobileBottomNav />
-                </ModalProvider>
+                {children}
+                <MobileBottomNav />
               </NotificationProvider>
             </LoadingProvider>
           </AuthProvider>

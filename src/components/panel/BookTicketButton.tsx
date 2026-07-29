@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useConnection } from 'wagmi';
 import { useAuth } from '@/lib/auth-context';
-import { useModalOpen } from '@/lib/modal-context';
+import { setIsModalOpen } from '@/lib/modal-store';
 import { useBuyTicket, type TicketStep } from '@/hooks/useBuyTicket';
 import { useSyncBooking } from '@/hooks/useSyncBooking';
 import { useQueryClient } from '@tanstack/react-query';
@@ -93,7 +93,6 @@ function BookingProgress({ currentStep }: { currentStep: WizardStep }) {
 export default function BookTicketButton({ selectedBodyId }: BookTicketButtonProps) {
   const { isConnected, address } = useConnection();
   const { user } = useAuth();
-  const { setModalOpen } = useModalOpen();
   const { buyTicket, step: txStep, txHash, tokenId, error: txError, reset: resetTx, checkReceipt } = useBuyTicket();
   const syncMutation = useSyncBooking();
   const queryClient = useQueryClient();
@@ -138,7 +137,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
   const handleOpenWizard = () => {
     if (!body) return;
     setWizardOpen(true);
-    setModalOpen(true);
+    setIsModalOpen(true);
     setWizardStep('travel-info');
     setDepartureDate('');
     setAvailabilityChecked(false);
@@ -151,7 +150,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
 
   const handleCloseWizard = () => {
     setWizardOpen(false);
-    setModalOpen(false);
+    setIsModalOpen(false);
     resetTx();
     setDbStatus('idle');
     triggeredRef.current = false;
