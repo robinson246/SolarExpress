@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -15,10 +16,14 @@
 
 # next.js
 /.next/
+**/.next/
 /out/
 
 # production
 /build
+
+# large binaries
+*.exe
 
 # misc
 .DS_Store
@@ -32,6 +37,22 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# project artifacts
+contractaddresses.txt
+dev-output.log
+dev-server.log
+npm
+backend/npm
+
+# large image textures (source-only)
+earth-full.png
+earth-no-clouds-hires.png
+
+# hardhat / foundry build cache
+.deps/
+.states/
+artifacts/
 
 # vercel
 .vercel
