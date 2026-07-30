@@ -1,14 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useBookingHistory } from '@/hooks/useBookingHistory';
+import { useOnChainBookings } from '@/hooks/useOnChainBookings';
+import { useTokenURI } from '@/hooks/useTicketInfo';
+import { TICKET_NFT_ADDRESS } from '@/lib/contract';
 
 import { bodies } from '@/data/bodies';
 import { getTravelRoute } from '@/data/travel';
 import { useConnection, useConnect } from 'wagmi';
+import { formatEther } from 'viem';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/layout/NavBar';
 import NFTTicket from '@/components/nft/NFTTicket';
 import Modal from '@/components/ui/Modal';
@@ -30,6 +35,20 @@ function formatDate(iso: string): string {
 function getBody(id: number) {
   return bodies.find(b => b.id === id);
 }
+
+function resolveIPFS(uri: string): string {
+  if (uri.startsWith('ipfs://')) {
+    return uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+  }
+  return uri;
+}
+
+type NFTMetadata = {
+  name?: string;
+  description?: string;
+  image?: string;
+  attributes?: { trait_type: string; value: string | number }[];
+};
 
 /* ─── NFT Gallery Tab ─── */
 function NFTGalleryView({ bookings, onSelect }: { bookings: BookingRecord[]; onSelect: (b: BookingRecord) => void }) {
@@ -64,60 +83,146 @@ function NFTGalleryView({ bookings, onSelect }: { bookings: BookingRecord[]; onS
   );
 }
 
+function SkeletonBlock({ className }: { className?: string }) {
+  return <div className={`bg-white/[0.04] rounded-xl animate-pulse ${className ?? ''}`} />;
+}
+
 function NFTDetailModal({ booking, onClose, onViewBooking }: { booking: BookingRecord; onClose: () => void; onViewBooking: () => void }) {
   const body = getBody(booking.destinationId);
+
+  const { tokenURI, isLoading: uriLoading, isError: uriError } = useTokenURI(BigInt(booking.tokenId));
+
+  const resolvedURI = useMemo(() => {
+    if (!tokenURI) return null;
+    return resolveIPFS(tokenURI);
+  }, [tokenURI]);
+
+  const { data: metadata, isLoading: metaLoading, isError: metaError } = useQuery<NFTMetadata>({
+    queryKey: ['nft-metadata', booking.tokenId, resolvedURI],
+    queryFn: async () => {
+      if (!resolvedURI) throw new Error('No URI');
+      const res = await fetch(resolvedURI);
+      if (!res.ok) throw new Error('Failed to fetch metadata');
+      return res.json();
+    },
+    enabled: !!resolvedURI,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const onChainLoading = uriLoading || metaLoading;
+  const onChainFailed = uriError || (!uriLoading && !tokenURI) || metaError;
+  const hasOnChain = !!metadata && !metaError;
+
+  const metaImage = metadata?.image ? resolveIPFS(metadata.image) : null;
+
   return (
     <Modal open onClose={onClose}>
-      <div className='w-full max-w-[540px] mx-auto px-6 pt-6 sm:px-8 sm:pt-8'>
-        <NFTTicket destinationId={booking.destinationId} tokenId={booking.tokenId} priceEth={booking.pricePaid} />
-      </div>
-        <div className='px-6 pb-6 sm:px-8 sm:pb-8 space-y-5 -mt-4'>
-          <div>
-            <h2 className='text-2xl font-bold text-white'>{body?.name ?? `#${booking.destinationId}`}</h2>
-            <p className='text-sm text-gray-500 mt-1'>NFT Ticket &middot; Token #{booking.tokenId}</p>
-          </div>
-          <div className='h-px bg-gradient-to-r from-violet-500/20 via-gray-700/50 to-transparent' />
+      {onChainLoading && !hasOnChain ? (
+        <div className='w-full max-w-[540px] mx-auto p-6 sm:p-8 space-y-4'>
+          <SkeletonBlock className='w-full aspect-[3/4] rounded-xl' />
+          <SkeletonBlock className='h-8 w-3/4' />
+          <SkeletonBlock className='h-4 w-1/2' />
           <div className='grid grid-cols-2 gap-3'>
-            <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
-              <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Token ID</p>
-              <p className='text-sm text-white font-mono'>#{booking.tokenId}</p>
-            </div>
-            <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
-              <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Price Paid</p>
-              <p className='text-sm text-emerald-400 font-mono font-bold'>{booking.pricePaid} ETH</p>
-            </div>
-            <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
-              <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Mint Date</p>
-              <p className='text-sm text-white'>{formatDate(booking.createdAt)}</p>
-            </div>
-            <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
-              <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Network</p>
-              <p className='text-sm text-violet-400 font-mono'>Sepolia</p>
-            </div>
+            <SkeletonBlock className='h-20' />
+            <SkeletonBlock className='h-20' />
+            <SkeletonBlock className='h-20' />
+            <SkeletonBlock className='h-20' />
           </div>
-          <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 space-y-2.5'>
-            <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>On-Chain Details</p>
-            <div className='space-y-2'>
-              <div>
-                <p className='text-[10px] text-gray-600'>Transaction Hash</p>
-                <p className='text-xs text-gray-300 font-mono break-all'>{booking.transactionHash}</p>
-              </div>
-              <div>
-                <p className='text-[10px] text-gray-600'>Owner Wallet</p>
-                <p className='text-xs text-gray-300 font-mono'>{shorten(booking.walletAddress, 12)}</p>
-              </div>
-            </div>
-            <a href={`https://sepolia.etherscan.io/tx/${booking.transactionHash}`} target='_blank' rel='noopener noreferrer' className='inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors mt-1'>
-              <svg className='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' /><polyline points='15 3 21 3 21 9' /><line x1='10' y1='14' x2='21' y2='3' />
-              </svg>
-              View on Sepolia Etherscan
-            </a>
-          </div>
-          <button onClick={onViewBooking} className='w-full py-2.5 text-center text-xs font-medium rounded-lg glass-card-hover text-violet-300 cursor-pointer'>
-            Linked Booking →
-          </button>
+          <SkeletonBlock className='h-32' />
         </div>
+      ) : (
+        <>
+          <div className='w-full max-w-[540px] mx-auto px-6 pt-6 sm:px-8 sm:pt-8'>
+            {hasOnChain ? (
+              metaImage ? (
+                <img
+                  src={metaImage}
+                  alt={metadata?.name ?? `Token #${booking.tokenId}`}
+                  className='w-full rounded-xl'
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <NFTTicket destinationId={booking.destinationId} tokenId={booking.tokenId} priceEth={booking.pricePaid} />
+              )
+            ) : (
+              <NFTTicket destinationId={booking.destinationId} tokenId={booking.tokenId} priceEth={booking.pricePaid} />
+            )}
+          </div>
+          <div className='px-6 pb-6 sm:px-8 sm:pb-8 space-y-5 -mt-4'>
+            <div>
+              <h2 className='text-2xl font-bold text-white'>{hasOnChain ? (metadata?.name ?? body?.name ?? `#${booking.destinationId}`) : (body?.name ?? `#${booking.destinationId}`)}</h2>
+              <p className='text-sm text-gray-500 mt-1'>{hasOnChain && metadata?.description ? metadata.description : `NFT Ticket \u00B7 Token #${booking.tokenId}`}</p>
+            </div>
+
+            {hasOnChain && metadata?.attributes && metadata.attributes.length > 0 && (
+              <>
+                <div className='h-px bg-gradient-to-r from-violet-500/20 via-gray-700/50 to-transparent' />
+                <div>
+                  <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-3'>On-Chain Attributes</p>
+                  <div className='grid grid-cols-2 gap-2'>
+                    {metadata.attributes.map((attr, i) => (
+                      <div key={i} className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3 space-y-0.5'>
+                        <p className='text-[9px] font-medium text-gray-500 uppercase tracking-wider'>{attr.trait_type}</p>
+                        <p className='text-sm text-white font-medium'>{String(attr.value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className='h-px bg-gradient-to-r from-violet-500/20 via-gray-700/50 to-transparent' />
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
+                <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Token ID</p>
+                <p className='text-sm text-white font-mono'>#{booking.tokenId}</p>
+              </div>
+              <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
+                <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Price Paid</p>
+                <p className='text-sm text-emerald-400 font-mono font-bold'>{booking.pricePaid} ETH</p>
+              </div>
+              <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
+                <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Mint Date</p>
+                <p className='text-sm text-white'>{formatDate(booking.createdAt)}</p>
+              </div>
+              <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-3.5 space-y-1'>
+                <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>Network</p>
+                <p className='text-sm text-violet-400 font-mono'>Sepolia</p>
+              </div>
+            </div>
+            <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 space-y-2.5'>
+              <p className='text-[10px] font-medium text-gray-500 uppercase tracking-wider'>On-Chain Details</p>
+              <div className='space-y-2'>
+                <div>
+                  <p className='text-[10px] text-gray-600'>Transaction Hash</p>
+                  <p className='text-xs text-gray-300 font-mono break-all'>{booking.transactionHash}</p>
+                </div>
+                <div>
+                  <p className='text-[10px] text-gray-600'>Owner Wallet</p>
+                  <p className='text-xs text-gray-300 font-mono'>{shorten(booking.walletAddress, 12)}</p>
+                </div>
+              </div>
+              <div className='flex flex-col gap-1.5 mt-1'>
+                <a href={`https://sepolia.etherscan.io/tx/${booking.transactionHash}`} target='_blank' rel='noopener noreferrer' className='inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors'>
+                  <svg className='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                    <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' /><polyline points='15 3 21 3 21 9' /><line x1='10' y1='14' x2='21' y2='3' />
+                  </svg>
+                  View Transaction on Etherscan
+                </a>
+                <a href={`https://sepolia.etherscan.io/nft/${TICKET_NFT_ADDRESS}/${booking.tokenId}`} target='_blank' rel='noopener noreferrer' className='inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors'>
+                  <svg className='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                    <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' /><polyline points='15 3 21 3 21 9' /><line x1='10' y1='14' x2='21' y2='3' />
+                  </svg>
+                  View NFT on Etherscan
+                </a>
+              </div>
+            </div>
+            <button onClick={onViewBooking} className='w-full py-2.5 text-center text-xs font-medium rounded-lg glass-card-hover text-violet-300 cursor-pointer'>
+              Linked Booking →
+            </button>
+          </div>
+        </>
+      )}
     </Modal>
   );
 }
@@ -295,15 +400,54 @@ export default function MyTicketsPage() {
   const { user, checkingSession } = useAuth();
   const { isConnected, address } = useConnection();
   const { mutate: connectWallet, connectors } = useConnect();
-  const { data: bookings, isLoading, isError, error, refetch } = useBookingHistory(!!user);
+  const { data: backendBookings, isLoading: isBackendLoading, refetch: refetchBackend } = useBookingHistory(!!user);
+  const { onChainBookings, isLoading: isOnChainLoading, isError: isOnChainError, error: onChainError, refetch: refetchOnChain } = useOnChainBookings();
   const [tab, setTab] = useState<Tab>('nft-gallery');
   const [selectedNft, setSelectedNft] = useState<BookingRecord | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
 
-  // Refetch when wallet address changes (e.g., switch wallet on mobile)
+  const isUsingOnChain = isConnected;
+  const isLoading = isUsingOnChain ? isOnChainLoading : isBackendLoading;
+  const isError = isUsingOnChain ? isOnChainError : false;
+  const error = isUsingOnChain ? onChainError : null;
+
+  const mergedBookings: (BookingRecord & { hasBackendRecord: boolean })[] = useMemo(() => {
+    if (isUsingOnChain) {
+      if (!onChainBookings) return [];
+      return onChainBookings.map(ob => {
+        const ticketId = Number(ob.ticketId);
+        const backendMatch = backendBookings?.find(b => b.tokenId === ticketId);
+        return {
+          tokenId: ticketId,
+          destinationId: Number(ob.destinationId),
+          pricePaid: formatEther(ob.pricePaid),
+          createdAt: new Date(Number(ob.timestamp) * 1000).toISOString(),
+          _id: backendMatch?._id ?? `onchain-${ob.ticketId}`,
+          userId: backendMatch?.userId ?? '',
+          walletAddress: backendMatch?.walletAddress ?? address ?? '',
+          transactionHash: backendMatch?.transactionHash ?? '',
+          status: backendMatch?.status ?? 'confirmed',
+          updatedAt: backendMatch?.updatedAt ?? new Date(Number(ob.timestamp) * 1000).toISOString(),
+          bookingReference: backendMatch?.bookingReference,
+          departureDate: backendMatch?.departureDate,
+          departureTime: backendMatch?.departureTime,
+          travelClass: backendMatch?.travelClass,
+          seatNumber: backendMatch?.seatNumber,
+          availabilityStatus: backendMatch?.availabilityStatus,
+          availabilityCheckedAt: backendMatch?.availabilityCheckedAt,
+          flightNumber: backendMatch?.flightNumber,
+          launchTerminal: backendMatch?.launchTerminal,
+          hasBackendRecord: !!backendMatch,
+        };
+      });
+    }
+    return (backendBookings ?? []).map(b => ({ ...b, hasBackendRecord: true }));
+  }, [onChainBookings, backendBookings, isUsingOnChain, address]);
+
+  // Refetch when wallet address changes
   useEffect(() => {
-    if (user || address) refetch();
-  }, [address, user, refetch]);
+    if (user || address) refetchBackend();
+  }, [address, user, refetchBackend]);
 
   const handleSignIn = () => {
     if (connectors[0]) connectWallet({ connector: connectors[0] });
@@ -373,7 +517,7 @@ export default function MyTicketsPage() {
             </div>
             <div>
               <h1 className='text-xl font-bold'>My Tickets</h1>
-              <p className='text-xs text-gray-500 mt-0.5'>{bookings?.length ?? 0} ticket{(bookings?.length ?? 0) !== 1 ? 's' : ''}</p>
+              <p className='text-xs text-gray-500 mt-0.5'>{mergedBookings.length} ticket{mergedBookings.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
 
@@ -427,7 +571,7 @@ export default function MyTicketsPage() {
           )}
 
           {/* Empty */}
-          {!isLoading && !isError && bookings && bookings.length === 0 && (
+          {!isLoading && !isError && mergedBookings.length === 0 && (
             <div className='text-center py-16'>
               <div className='w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 mx-auto flex items-center justify-center mb-4'>
                 <svg className='w-7 h-7 text-violet-400' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5'>
@@ -443,13 +587,13 @@ export default function MyTicketsPage() {
           )}
 
           {/* Content */}
-          {!isLoading && !isError && bookings && bookings.length > 0 && (
+          {!isLoading && !isError && mergedBookings.length > 0 && (
             <>
               {tab === 'nft-gallery' && (
-                <NFTGalleryView bookings={bookings} onSelect={setSelectedNft} />
+                <NFTGalleryView bookings={mergedBookings} onSelect={setSelectedNft} />
               )}
               {tab === 'booking-history' && (
-                <BookingHistoryView bookings={bookings} onSelect={setSelectedBooking} onViewNft={handleViewNft} />
+                <BookingHistoryView bookings={mergedBookings} onSelect={setSelectedBooking} onViewNft={handleViewNft} />
               )}
             </>
           )}
