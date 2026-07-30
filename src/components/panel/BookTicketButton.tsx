@@ -746,7 +746,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
             {wizardStep !== 'confirmation' && wizardStep !== 'payment' && (
               <button
                 onClick={() => {
-                  const idx = WIZARD_ORDER.indexOf(wizardStep);
                   if (wizardStep === 'travel-info') goToStep('departure-date');
                   else if (wizardStep === 'departure-date') { if (canProceedFromDate) goToStep('availability'); }
                   else if (wizardStep === 'availability') { if (!availabilityChecked && !availabilityLoading) handleCheckAvailability(); else if (availabilityChecked) goToStep('flight'); }
@@ -773,6 +772,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
             )}
           </div>
         </div>
+      </div>
       , document.body)}
     </>
   );
