@@ -290,7 +290,7 @@ function BookingDetailModal({ booking, onClose, onViewNft }: { booking: BookingR
 export default function MyTicketsPage() {
   const router = useRouter();
   const { user, checkingSession } = useAuth();
-  const { data: bookings, isLoading, isError, error } = useBookingHistory();
+  const { data: bookings, isLoading, isError, error } = useBookingHistory(!!user);
   const [tab, setTab] = useState<Tab>('nft-gallery');
   const [selectedNft, setSelectedNft] = useState<BookingRecord | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
@@ -358,10 +358,21 @@ export default function MyTicketsPage() {
           {isError && (
             <div className='p-4 bg-red-900/20 border border-red-800/40 rounded-xl space-y-2'>
               <p className='text-sm text-red-300'>Could not load tickets.</p>
-              <p className='text-xs text-red-400/70'>{(error as Error)?.message || 'Network error. Ensure your wallet browser allows cross-site cookies.'}</p>
-              <button onClick={() => window.location.reload()} className='text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2 cursor-pointer'>
-                Retry
-              </button>
+              <p className='text-xs text-red-400/70'>
+                {(error as Error)?.message?.toLowerCase().includes('not authenticated')
+                  ? 'Please sign in to view your tickets.'
+                  : (error as Error)?.message || 'Network error. If using a mobile wallet browser, try the in-app browser or a desktop browser.'}
+              </p>
+              <div className='flex gap-2'>
+                <button onClick={() => window.location.reload()} className='text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2 cursor-pointer'>
+                  Retry
+                </button>
+                {(error as Error)?.message?.toLowerCase().includes('not authenticated') && (
+                  <button onClick={() => router.push('/signin')} className='text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2 cursor-pointer'>
+                    Sign In
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

@@ -40,6 +40,7 @@ const Planet: React.FC<PlanetProps> = ({ body, isFocused, position, onClick }) =
                 whiteSpace: 'nowrap',
                 userSelect: 'none',
               }}
+              className='hidden sm:block'
             >
               {body.name}
             </div>
@@ -70,6 +71,7 @@ const Planet: React.FC<PlanetProps> = ({ body, isFocused, position, onClick }) =
               whiteSpace: 'nowrap',
               userSelect: 'none',
             }}
+            className='hidden sm:block'
           >
             {body.name}
           </div>

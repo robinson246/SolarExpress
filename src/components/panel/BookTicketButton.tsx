@@ -282,7 +282,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
         <div className='fixed inset-0 z-[9999] flex items-start sm:items-center justify-center p-0 sm:p-4' onClick={handleCloseWizard}>
           <div className='absolute inset-0 bg-[#09090b]/95 animate-modal-fade' />
           <div
-            className='relative w-full sm:max-w-xl max-h-full sm:max-h-[90vh] overflow-y-auto overflow-x-hidden animate-modal-scale bg-gray-900/95 backdrop-blur-xl border border-gray-700/60 shadow-2xl shadow-black/50 sm:rounded-2xl'
+            className='relative w-full sm:max-w-xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overflow-x-hidden animate-modal-scale bg-gray-900/95 backdrop-blur-xl border border-gray-700/60 shadow-2xl shadow-black/50 sm:rounded-2xl'
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

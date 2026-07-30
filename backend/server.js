@@ -13,6 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
 
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cookieParser());
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
