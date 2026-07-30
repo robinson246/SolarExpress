@@ -20,23 +20,18 @@ export default function NFTTicket({
   const art = getNFTArtConfig(destinationId);
   if (!body || !art) return null;
 
-  const width = compact ? 340 : 700;
-  const height = compact ? 540 : 1100;
-  const planetR = compact ? 65 : 130;
-  const planetCx = compact ? 170 : 350;
-  const planetCy = compact ? 155 : 290;
-  const orbitRx = compact ? 90 : 180;
-  const orbitRy = compact ? 26 : 52;
-  const fs = (v: number) => compact ? Math.round(v * 0.5) : v;
-  const py = (v: number) => compact ? v * 0.55 : v;
+  const displayW = compact ? 340 : 700;
+  const displayH = compact ? 540 : 1100;
+  const VW = 340;
+  const VH = 540;
 
   const uid = useId();
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      width={displayW}
+      height={displayH}
+      viewBox={`0 0 ${VW} ${VH}`}
       xmlns='http://www.w3.org/2000/svg'
       className='w-full h-auto rounded-xl'
     >
@@ -63,7 +58,7 @@ export default function NFTTicket({
           <stop offset='100%' stopColor='rgba(0,0,0,0.5)' />
         </radialGradient>
         <clipPath id={`planet-clip-${destinationId}-${uid}`}>
-          <circle cx={planetCx} cy={planetCy} r={planetR} />
+          <circle cx={170} cy={155} r={65} />
         </clipPath>
         <radialGradient id={`${LOGO_UID}-sun`} cx='50%' cy='50%'>
           <stop offset='0%' stopColor='#FFE27A' />
@@ -84,45 +79,38 @@ export default function NFTTicket({
       </defs>
 
       {/* Background */}
-      <rect width={width} height={height} rx={compact ? 20 : 35} fill={`url(#bg-${destinationId}-${uid})`} />
+      <rect width={VW} height={VH} rx={20} fill={`url(#bg-${destinationId}-${uid})`} />
 
       {/* Stars */}
       {STAR_POSITIONS.map(([x, y], i) => (
-        <circle key={i} cx={x / (700 / width)} cy={y / (1000 / height)} r={i % 3 === 0 ? 2 : i % 3 === 1 ? 1.5 : 1} fill='white' opacity='0.7' />
+        <circle key={i} cx={x / (700 / VW)} cy={y / (1000 / VH)} r={i % 3 === 0 ? 2 : i % 3 === 1 ? 1.5 : 1} fill='white' opacity='0.7' />
       ))}
 
       {/* Ticket panel */}
       <rect
-        x={width * 0.057}
-        y={height * 0.03}
-        width={width * 0.886}
-        height={height * 0.94}
-        rx={compact ? 18 : 35}
+        x={VW * 0.057}
+        y={VH * 0.03}
+        width={VW * 0.886}
+        height={VH * 0.94}
+        rx={18}
         fill={`url(#panel-${destinationId}-${uid})`}
         stroke={art.accentColor}
-        strokeWidth={compact ? 1 : 2}
+        strokeWidth={1}
       />
 
-      {/* Logo */}
-      <text x={width * 0.1} y={height * 0.065} fill={art.accentColor} fontSize={compact ? 16 : 32} fontFamily='Arial' fontWeight='bold'>
+      {/* SOLAREXPRESS logo */}
+      <text x={VW * 0.1} y={VH * 0.065} fill={art.accentColor} fontSize={19} fontFamily='Arial' fontWeight='bold'>
         SOLAREXPRESS
       </text>
-
-      <text x={width * 0.74} y={height * 0.065} fill='#94a3b8' fontSize={compact ? 9 : 16}>
+      <text x={VW * 0.74} y={VH * 0.065} fill='#94a3b8' fontSize={10}>
         ERC-721
       </text>
 
-      {!compact && (
-        <text x={width * 0.1} y={height * 0.095} fill='#64748b' fontSize={14} fontFamily='Arial' letterSpacing='2'>
-          INTERPLANETARY BOARDING PASS
-        </text>
-      )}
-
       {/* Planet */}
       <PlanetRenderer
-        cx={planetCx}
-        cy={planetCy}
-        r={planetR}
+        cx={170}
+        cy={155}
+        r={65}
         gradientId={`planet-${destinationId}-${uid}`}
         glowId={`glow-${destinationId}-${uid}`}
         clipId={`planet-clip-${destinationId}-${uid}`}
@@ -135,98 +123,59 @@ export default function NFTTicket({
       />
 
       {/* Orbit ring */}
-      <ellipse cx={planetCx} cy={planetCy} rx={orbitRx} ry={orbitRy} fill='none' stroke={art.orbitColor} opacity='0.4' />
+      <ellipse cx={170} cy={155} rx={90} ry={26} fill='none' stroke={art.orbitColor} opacity='0.4' />
 
       {/* Destination label */}
-      <text x={width * 0.1} y={compact ? py(450) : 560} fill='#94a3b8' fontSize={fs(22)}>
+      <text x={VW * 0.1} y={247.5} fill='#94a3b8' fontSize={11}>
         DESTINATION
       </text>
-      <text x={width * 0.1} y={compact ? py(480) : 600} fill='white' fontSize={compact ? 24 : 48} fontWeight='bold'>
+      <text x={VW * 0.1} y={264} fill='white' fontSize={24} fontWeight='bold'>
         {body.name.toUpperCase()}
       </text>
-      <text x={width * 0.1} y={compact ? py(500) : 630} fill={art.accentColor} fontSize={fs(26)}>
+      <text x={VW * 0.1} y={275} fill={art.accentColor} fontSize={13}>
         {body.type === 'planet' ? 'PLANET' : 'MOON'}
       </text>
 
       {/* Divider */}
-      <line x1={width * 0.1} y1={compact ? py(520) : 660} x2={width * 0.9} y2={compact ? py(520) : 660} stroke='#334155' />
+      <line x1={VW * 0.1} y1={286} x2={VW * 0.9} y2={286} stroke='#334155' />
 
       {/* Row 1: Token / Price / Network */}
-      <text x={width * 0.1} y={compact ? py(550) : 700} fill='#94a3b8' fontSize={fs(16)}>TOKEN</text>
-      <text x={width * 0.1} y={compact ? py(570) : 725} fill='white' fontSize={compact ? 13 : 26}>{`#${String(tokenId).padStart(3, '0')}`}</text>
+      <text x={VW * 0.1} y={302.5} fill='#94a3b8' fontSize={8}>TOKEN</text>
+      <text x={VW * 0.1} y={313.5} fill='white' fontSize={13}>{`#${String(tokenId).padStart(3, '0')}`}</text>
 
-      <text x={width * 0.4} y={compact ? py(550) : 700} fill='#94a3b8' fontSize={fs(16)}>PRICE</text>
-      <text x={width * 0.4} y={compact ? py(570) : 725} fill='white' fontSize={compact ? 13 : 26}>{priceEth} ETH</text>
+      <text x={VW * 0.4} y={302.5} fill='#94a3b8' fontSize={8}>PRICE</text>
+      <text x={VW * 0.4} y={313.5} fill='white' fontSize={13}>{priceEth} ETH</text>
 
-      <text x={width * 0.7} y={compact ? py(550) : 700} fill='#94a3b8' fontSize={fs(16)}>NETWORK</text>
-      <text x={width * 0.7} y={compact ? py(570) : 725} fill={art.accentColor} fontSize={compact ? 13 : 26}>SEPOLIA</text>
+      <text x={VW * 0.7} y={302.5} fill='#94a3b8' fontSize={8}>NETWORK</text>
+      <text x={VW * 0.7} y={313.5} fill={art.accentColor} fontSize={13}>SEPOLIA</text>
 
       {/* Wallet address */}
       {walletAddress && (
-        !compact ? (
-          <g>
-            <line x1={width * 0.1} y1={760} x2={width * 0.9} y2={760} stroke='#1e293b' />
-            <text x={width * 0.1} y={800} fill='#94a3b8' fontSize={16}>WALLET</text>
-            <text x={width * 0.1} y={825} fill='white' fontSize={20} fontFamily='monospace'>
-              {`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}
-            </text>
-          </g>
-        ) : (
-          <text x={width * 0.1} y={py(590)} fill='#94a3b8' fontSize={10} fontFamily='monospace'>
-            {`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}
-          </text>
-        )
+        <text x={VW * 0.1} y={324.5} fill='#94a3b8' fontSize={10} fontFamily='monospace'>
+          {`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}
+        </text>
       )}
 
       {/* Status badge */}
-      {!compact && (
-        <>
-          <rect x={width * 0.1} y={970} width={190} height={50} rx={25} fill='#0f766e' />
-          <text x={width * 0.1 + 20} y={1000} fill='white' fontSize={22}>
-            NFT MINTED
-          </text>
-        </>
-      )}
-      {compact && (
-        <>
-          <rect x={width * 0.1} y={py(520) + 40} width={90} height={22} rx={11} fill='#0f766e' />
-          <text x={width * 0.1 + 10} y={py(520) + 55} fill='white' fontSize={9}>
-            NFT MINTED
-          </text>
-        </>
-      )}
+      <rect x={VW * 0.1} y={326} width={90} height={22} rx={11} fill='#0f766e' />
+      <text x={VW * 0.1 + 10} y={341} fill='white' fontSize={9}>
+        NFT MINTED
+      </text>
 
       {/* Bottom-right logo watermark */}
-      {!compact && (
-        <g transform={`translate(${width * 0.87}, ${height * 0.92}) scale(0.12)`}>
-          <circle cx='256' cy='256' r='90' fill='#08111F' opacity='0.55' />
-          <circle cx='256' cy='256' r='84' fill='#FFB300' opacity='.35' filter={`url(#${LOGO_UID}-glow)`} />
-          <circle cx='256' cy='256' r='70' fill={`url(#${LOGO_UID}-sun)`} opacity='0.6' />
-          <ellipse cx='256' cy='256' rx='170' ry='72' transform='rotate(-18 256 256)' fill='none' stroke={`url(#${LOGO_UID}-orbit)`} strokeWidth='8' opacity='0.6' />
-          <g transform='translate(392 186) rotate(28)' opacity='0.6'>
-            <path d='M0 -12 L22 0 L0 12 L6 4 L-14 4 L-8 0 L-14 -4 L6 -4 Z' fill='#FFFFFF' />
-            <polygon points='-2,-5 -14,-15 -8,-3' fill='#D1D5DB' />
-            <polygon points='-2,5 -14,15 -8,3' fill='#D1D5DB' />
-            <circle cx='10' cy='0' r='2.5' fill='#A78BFA' />
-            <path d='M-16 0 Q-38 -2 -58 0' fill='none' stroke='#8B5CF6' strokeWidth='5' strokeLinecap='round' />
-          </g>
+      <g transform={`translate(${VW * 0.83}, ${VH * 0.90}) scale(0.065)`}>
+        <circle cx='256' cy='256' r='90' fill='#08111F' opacity='0.5' />
+        <circle cx='256' cy='256' r='84' fill='#FFB300' opacity='.35' filter={`url(#${LOGO_UID}-glow)`} />
+        <circle cx='256' cy='256' r='70' fill={`url(#${LOGO_UID}-sun)`} opacity='0.55' />
+        <ellipse cx='256' cy='256' rx='170' ry='72' transform='rotate(-18 256 256)' fill='none' stroke={`url(#${LOGO_UID}-orbit)`} strokeWidth='8' opacity='0.55' />
+        <g transform='translate(392 186) rotate(28)' opacity='0.55'>
+          <path d='M0 -12 L22 0 L0 12 L6 4 L-14 4 L-8 0 L-14 -4 L6 -4 Z' fill='#FFFFFF' />
+          <polygon points='-2,-5 -14,-15 -8,-3' fill='#D1D5DB' />
+          <polygon points='-2,5 -14,15 -8,3' fill='#D1D5DB' />
+          <circle cx='10' cy='0' r='2.5' fill='#A78BFA' />
+          <path d='M-16 0 Q-38 -2 -58 0' fill='none' stroke='#8B5CF6' strokeWidth='5' strokeLinecap='round' />
         </g>
-      )}
-      {compact && (
-        <g transform={`translate(${width * 0.83}, ${height * 0.90}) scale(0.065)`}>
-          <circle cx='256' cy='256' r='90' fill='#08111F' opacity='0.5' />
-          <circle cx='256' cy='256' r='84' fill='#FFB300' opacity='.35' filter={`url(#${LOGO_UID}-glow)`} />
-          <circle cx='256' cy='256' r='70' fill={`url(#${LOGO_UID}-sun)`} opacity='0.55' />
-          <ellipse cx='256' cy='256' rx='170' ry='72' transform='rotate(-18 256 256)' fill='none' stroke={`url(#${LOGO_UID}-orbit)`} strokeWidth='8' opacity='0.55' />
-          <g transform='translate(392 186) rotate(28)' opacity='0.55'>
-            <path d='M0 -12 L22 0 L0 12 L6 4 L-14 4 L-8 0 L-14 -4 L6 -4 Z' fill='#FFFFFF' />
-            <polygon points='-2,-5 -14,-15 -8,-3' fill='#D1D5DB' />
-            <polygon points='-2,5 -14,15 -8,3' fill='#D1D5DB' />
-            <circle cx='10' cy='0' r='2.5' fill='#A78BFA' />
-            <path d='M-16 0 Q-38 -2 -58 0' fill='none' stroke='#8B5CF6' strokeWidth='5' strokeLinecap='round' />
-          </g>
-        </g>
-      )}
+      </g>
     </svg>
   );
 }
