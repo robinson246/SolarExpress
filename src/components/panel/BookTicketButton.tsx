@@ -363,14 +363,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                   <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 space-y-3'>
                     <h3 className='text-sm font-bold text-white'>Launch Availability</h3>
                     <p className='text-[11px] text-gray-500'>Checking departure availability for {new Date(departureDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}.</p>
-                    {!availabilityChecked && !availabilityLoading && (
-                      <button
-                        onClick={handleCheckAvailability}
-                        className='w-full py-3 rounded-lg text-sm font-medium bg-amber-600/80 hover:bg-amber-500 text-white transition-colors cursor-pointer'
-                      >
-                        Check Availability
-                      </button>
-                    )}
                     {availabilityLoading && (
                       <div className='space-y-3 py-4'>
                         <div className='flex items-center gap-3'>
@@ -562,17 +554,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={async () => {
-                      setWizardStep('payment');
-                      await buyTicket(body.id, body.priceEth);
-                    }}
-                    disabled={!isConnected}
-                    className='w-full py-3 rounded-lg text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed'
-                  >
-                    Confirm & Pay
-                  </button>
                   <button onClick={() => goToStep('agreement')} className='w-full text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer bg-transparent border-none'>
                     Back
                   </button>
