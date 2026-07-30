@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { setAuthToken } from './api';
 
 interface AuthUser {
   id: number;
@@ -10,6 +11,7 @@ interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null;
+  token: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -25,6 +27,7 @@ const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth`;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(data.user);
+      if (data.token) { setToken(data.token); setAuthToken(data.token); }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       setError(msg);
@@ -100,11 +104,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ignore network errors — clear local state regardless
     }
     setUser(null);
+    setToken(null);
+    setAuthToken(null);
     setError(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signUp, signOut, refreshUser, loading, checkingSession, error }}>
+    <AuthContext.Provider value={{ user, token, signIn, signUp, signOut, refreshUser, loading, checkingSession, error }}>
       {children}
     </AuthContext.Provider>
   );

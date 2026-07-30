@@ -67,7 +67,7 @@ async function signup(req, res) {
 
     generateOnboardingNotifications(user._id).catch(err => console.error('Onboarding notification error:', err));
 
-    res.status(201).json({ user: { id: user._id, email: user.email, walletAddress: null } });
+    res.status(201).json({ user: { id: user._id, email: user.email, walletAddress: null }, token });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -96,7 +96,7 @@ async function login(req, res) {
 
     generateOnboardingNotifications(user._id).catch(err => console.error('Onboarding notification error:', err));
 
-    res.json({ user: { id: user._id, email: user.email, walletAddress: user.walletAddress || null } });
+    res.json({ user: { id: user._id, email: user.email, walletAddress: user.walletAddress || null }, token });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Internal server error' });

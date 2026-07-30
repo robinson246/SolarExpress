@@ -39,10 +39,22 @@ export type BookingRecord = {
   launchTerminal?: string;
 };
 
+let _authToken: string | null = null;
+let _walletAddress: string | null = null;
+
+export function setAuthToken(t: string | null) { _authToken = t; }
+export function setWalletAddress(w: string | null) { _walletAddress = w; }
+
+async function authFetch(url: string, init?: RequestInit): Promise<Response> {
+  const headers: Record<string, string> = {};
+  if (_authToken) headers['Authorization'] = `Bearer ${_authToken}`;
+  if (_walletAddress) headers['x-wallet-address'] = _walletAddress;
+  return fetch(url, { ...init, credentials: 'include', headers: { ...init?.headers, ...headers } });
+}
+
 export async function syncBooking(payload: SyncBookingPayload): Promise<void> {
-  const res = await fetch(`${API_BASE}/bookings`, {
+  const res = await authFetch(`${API_BASE}/bookings`, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
@@ -59,10 +71,7 @@ export async function fetchBookingHistory(): Promise<BookingRecord[]> {
   const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const res = await fetch(url, {
-      credentials: 'include',
-      signal: controller.signal,
-    });
+    const res = await authFetch(url, { signal: controller.signal });
 
     if (!res.ok) {
       const data = await res.json().catch(() => null);

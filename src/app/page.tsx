@@ -160,14 +160,18 @@ export default function Home() {
             {/* Bottom sheet */}
             <div className={`sm:hidden fixed inset-x-0 bottom-0 z-30 transition-transform duration-300 ${panelOpen ? 'translate-y-0' : 'translate-y-full'}`}>
               <div className='absolute inset-0 bg-black/40' onClick={() => setPanelOpen(false)} />
-              <div className='relative max-h-[70vh] overflow-y-auto bg-gray-900/98 border-t border-gray-700/60 rounded-t-2xl shadow-2xl'>
+              <div className='relative max-h-[70vh] bg-gray-900/98 border-t border-gray-700/60 rounded-t-2xl shadow-2xl flex flex-col'>
                 {/* Drag handle */}
-                <div className='sticky top-0 z-10 bg-gray-900/98 pt-2 pb-1'>
+                <div className='shrink-0 pt-2 pb-1'>
                   <div className='w-10 h-1 rounded-full bg-gray-600 mx-auto' />
                 </div>
-                <div className='px-4 pb-6 space-y-3'>
+                {/* Scrollable content */}
+                <div className='flex-1 overflow-y-auto px-4 space-y-3'>
                   <DestinationPanel selectedBodyId={selectedBodyId} />
                   <RoutePanel selectedBodyId={selectedBodyId} />
+                </div>
+                {/* Sticky action button */}
+                <div className='shrink-0 px-4 pt-3 pb-6 border-t border-gray-800/60'>
                   <BookTicketButton selectedBodyId={selectedBodyId} />
                 </div>
               </div>

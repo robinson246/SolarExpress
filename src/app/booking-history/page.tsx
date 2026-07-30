@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useBookingHistory } from '@/hooks/useBookingHistory';
+import { setWalletAddress } from '@/lib/api';
 import { bodies } from '@/data/bodies';
 import { getTravelRoute } from '@/data/travel';
+import { useConnection, useConnect } from 'wagmi';
 import NavBar from '@/components/layout/NavBar';
 import NFTTicket from '@/components/nft/NFTTicket';
 import Modal from '@/components/ui/Modal';
@@ -290,10 +292,22 @@ function BookingDetailModal({ booking, onClose, onViewNft }: { booking: BookingR
 export default function MyTicketsPage() {
   const router = useRouter();
   const { user, checkingSession } = useAuth();
-  const { data: bookings, isLoading, isError, error } = useBookingHistory(!!user);
+  const { isConnected, address } = useConnection();
+  const { mutate: connectWallet, connectors } = useConnect();
+  const { data: bookings, isLoading, isError, error, refetch } = useBookingHistory(!!user);
   const [tab, setTab] = useState<Tab>('nft-gallery');
   const [selectedNft, setSelectedNft] = useState<BookingRecord | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
+
+  // Keep api.ts wallet address in sync for header-based auth fallback
+  useEffect(() => {
+    setWalletAddress(address ?? null);
+  }, [address]);
+
+  const handleSignIn = () => {
+    if (connectors[0]) connectWallet({ connector: connectors[0] });
+    else router.push('/signin');
+  };
 
   useEffect(() => {
     if (!checkingSession && !user) router.replace('/signin');
@@ -368,8 +382,8 @@ export default function MyTicketsPage() {
                   Retry
                 </button>
                 {(error as Error)?.message?.toLowerCase().includes('not authenticated') && (
-                  <button onClick={() => router.push('/signin')} className='text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2 cursor-pointer'>
-                    Sign In
+                  <button onClick={handleSignIn} className='text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2 cursor-pointer'>
+                    Connect Wallet
                   </button>
                 )}
               </div>
