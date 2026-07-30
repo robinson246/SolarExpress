@@ -356,8 +356,12 @@ export default function MyTicketsPage() {
 
           {/* Error */}
           {isError && (
-            <div className='p-4 bg-red-900/20 border border-red-800/40 rounded-xl'>
-              <p className='text-sm text-red-300'>Failed to load. Please try again later.</p>
+            <div className='p-4 bg-red-900/20 border border-red-800/40 rounded-xl space-y-2'>
+              <p className='text-sm text-red-300'>Could not load tickets.</p>
+              <p className='text-xs text-red-400/70'>{(error as Error)?.message || 'Network error. Ensure your wallet browser allows cross-site cookies.'}</p>
+              <button onClick={() => window.location.reload()} className='text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2 cursor-pointer'>
+                Retry
+              </button>
             </div>
           )}
 

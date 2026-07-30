@@ -7,7 +7,8 @@ export function useBookingHistory() {
   return useQuery<BookingRecord[]>({
     queryKey: ['booking-history'],
     queryFn: fetchBookingHistory,
-    staleTime: 30_000,
+    staleTime: 15_000,
     retry: 1,
+    retryDelay: 3000,
   });
 }

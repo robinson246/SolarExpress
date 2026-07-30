@@ -54,15 +54,29 @@ export async function syncBooking(payload: SyncBookingPayload): Promise<void> {
 }
 
 export async function fetchBookingHistory(): Promise<BookingRecord[]> {
-  const res = await fetch(`${API_BASE}/bookings/history`, {
-    credentials: 'include',
-  });
+  const url = `${API_BASE}/bookings/history`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => null);
-    throw new Error(data?.error || `Failed to fetch booking history (${res.status})`);
+  try {
+    const res = await fetch(url, {
+      credentials: 'include',
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.error || `Fetch failed (${res.status})`);
+    }
+
+    const data = await res.json();
+    return data.bookings ?? [];
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('Request timed out. Check your connection.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await res.json();
-  return data.bookings ?? [];
 }
