@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useBookingHistory } from '@/hooks/useBookingHistory';
-import { setWalletAddress } from '@/lib/api';
+
 import { bodies } from '@/data/bodies';
 import { getTravelRoute } from '@/data/travel';
 import { useConnection, useConnect } from 'wagmi';
@@ -299,11 +299,6 @@ export default function MyTicketsPage() {
   const [tab, setTab] = useState<Tab>('nft-gallery');
   const [selectedNft, setSelectedNft] = useState<BookingRecord | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
-
-  // Keep api.ts wallet address in sync for header-based auth fallback
-  useEffect(() => {
-    setWalletAddress(address ?? null);
-  }, [address]);
 
   // Refetch when wallet address changes (e.g., switch wallet on mobile)
   useEffect(() => {

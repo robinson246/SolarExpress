@@ -40,15 +40,12 @@ export type BookingRecord = {
 };
 
 let _authToken: string | null = null;
-let _walletAddress: string | null = null;
 
 export function setAuthToken(t: string | null) { _authToken = t; }
-export function setWalletAddress(w: string | null) { _walletAddress = w; }
 
 async function authFetch(url: string, init?: RequestInit): Promise<Response> {
   const headers: Record<string, string> = {};
   if (_authToken) headers['Authorization'] = `Bearer ${_authToken}`;
-  if (_walletAddress) headers['x-wallet-address'] = _walletAddress;
   return fetch(url, { ...init, credentials: 'include', headers: { ...init?.headers, ...headers } });
 }
 
