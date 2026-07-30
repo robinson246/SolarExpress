@@ -304,14 +304,19 @@ export default function MyTicketsPage() {
     setWalletAddress(address ?? null);
   }, [address]);
 
+  // Refetch when wallet address changes (e.g., switch wallet on mobile)
+  useEffect(() => {
+    if (user || address) refetch();
+  }, [address, user, refetch]);
+
   const handleSignIn = () => {
     if (connectors[0]) connectWallet({ connector: connectors[0] });
     else router.push('/signin');
   };
 
   useEffect(() => {
-    if (!checkingSession && !user) router.replace('/signin');
-  }, [checkingSession, user, router]);
+    if (!checkingSession && !user && !isConnected) router.replace('/signin');
+  }, [checkingSession, user, isConnected, router]);
 
   const handleViewNft = (b: BookingRecord) => {
     setSelectedBooking(null);
@@ -319,8 +324,43 @@ export default function MyTicketsPage() {
     setSelectedNft(b);
   };
 
-  if (checkingSession || !user) {
+  // Allow showing content when wallet is connected, even if auth is pending
+  const showContent = !!user || isConnected;
+
+  if (checkingSession) {
     return <LoadingScreen visible message='Checking session...' />;
+  }
+
+  // Not authenticated and no wallet — inline prompt instead of redirect
+  if (!user && !isConnected) {
+    return (
+      <div className='h-full w-full overflow-hidden bg-[#09090b] text-white flex flex-col'>
+        <NavBar />
+        <div className='flex-1 flex items-center justify-center px-6'>
+          <div className='text-center max-w-sm space-y-4'>
+            <div className='w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 mx-auto flex items-center justify-center'>
+              <svg className='w-7 h-7 text-violet-400' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5'>
+                <rect x='3' y='11' width='18' height='11' rx='2' ry='2' /><path d='M7 11V7a5 5 0 0 1 10 0v4' />
+              </svg>
+            </div>
+            <h2 className='text-lg font-bold'>My Tickets</h2>
+            <p className='text-sm text-gray-400'>Connect your wallet to view your NFT tickets and booking history.</p>
+            <button
+              onClick={handleSignIn}
+              className='w-full py-2.5 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer'
+            >
+              Connect Wallet
+            </button>
+            <button
+              onClick={() => router.push('/signin')}
+              className='w-full py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors cursor-pointer'
+            >
+              Sign In with Email
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -400,6 +440,9 @@ export default function MyTicketsPage() {
               </div>
               <p className='text-sm text-gray-400'>No tickets yet.</p>
               <p className='text-xs text-gray-600 mt-1'>Book a destination to mint your first NFT ticket.</p>
+              <Link href='/' className='inline-block mt-4 px-6 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer'>
+                Explore Planets
+              </Link>
             </div>
           )}
 

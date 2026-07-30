@@ -279,14 +279,14 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
 
       {/* ─── WIZARD MODAL ─── */}
       {wizardOpen && createPortal(
-        <div className='fixed inset-0 z-[9999] flex items-start sm:items-center justify-center p-0 sm:p-4' onClick={handleCloseWizard}>
+        <div className='fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4' onClick={handleCloseWizard}>
           <div className='absolute inset-0 bg-[#09090b]/95 animate-modal-fade' />
           <div
-            className='relative w-full sm:max-w-xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overflow-x-hidden animate-modal-scale bg-gray-900/95 backdrop-blur-xl border border-gray-700/60 shadow-2xl shadow-black/50 sm:rounded-2xl'
+            className='relative w-full sm:max-w-xl max-h-[85vh] sm:max-h-[90vh] flex flex-col animate-modal-scale bg-gray-900/95 backdrop-blur-xl border border-gray-700/60 shadow-2xl shadow-black/50 sm:rounded-2xl'
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className='sticky top-0 z-20 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800 px-4 sm:px-6 py-3 sm:py-4 overflow-x-hidden'>
+            <div className='shrink-0 sticky top-0 z-20 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800 px-4 sm:px-6 py-3 sm:py-4 overflow-x-hidden'>
               <div className='flex items-center justify-between mb-2'>
                 <h2 className='text-sm sm:text-base font-bold text-white'>Book Your Flight</h2>
                 <button onClick={handleCloseWizard} className='w-7 h-7 flex items-center justify-center rounded-full bg-gray-800 text-gray-400 hover:text-white text-xs cursor-pointer border border-gray-700 shrink-0'>✕</button>
@@ -294,7 +294,9 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
               <BookingProgress currentStep={wizardStep} />
             </div>
 
-            <div className='p-4 sm:p-6 space-y-5'>
+            {/* Scrollable content */}
+            <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6'>
+              <div className='space-y-5'>
               {/* ─── Step 1: Travel Information ─── */}
               {wizardStep === 'travel-info' && (
                 <div className='space-y-4'>
@@ -737,6 +739,38 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Sticky bottom bar — always visible, shows current step action */}
+          <div className='shrink-0 sticky bottom-0 z-20 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 px-4 sm:px-6 py-3.5'>
+            {wizardStep !== 'confirmation' && wizardStep !== 'payment' && (
+              <button
+                onClick={() => {
+                  const idx = WIZARD_ORDER.indexOf(wizardStep);
+                  if (wizardStep === 'travel-info') goToStep('departure-date');
+                  else if (wizardStep === 'departure-date') { if (canProceedFromDate) goToStep('availability'); }
+                  else if (wizardStep === 'availability') { if (!availabilityChecked && !availabilityLoading) handleCheckAvailability(); else if (availabilityChecked) goToStep('flight'); }
+                  else if (wizardStep === 'flight') goToStep('passenger-class');
+                  else if (wizardStep === 'passenger-class') goToStep('agreement');
+                  else if (wizardStep === 'agreement') { if (canProceedFromAgreement) goToStep('review'); }
+                  else if (wizardStep === 'review') { if (isConnected) { setWizardStep('payment'); buyTicket(body.id, body.priceEth); } }
+                }}
+                disabled={
+                  (wizardStep === 'departure-date' && !canProceedFromDate) ||
+                  (wizardStep === 'agreement' && !canProceedFromAgreement) ||
+                  (wizardStep === 'review' && !isConnected)
+                }
+                className='w-full py-2.5 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-all cursor-pointer disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed'
+              >
+                {wizardStep === 'travel-info' && 'Continue — Departure Date'}
+                {wizardStep === 'departure-date' && 'Check Availability'}
+                {wizardStep === 'availability' && (availabilityChecked ? 'View Flight Details' : 'Check Availability')}
+                {wizardStep === 'flight' && 'Select Passenger Class'}
+                {wizardStep === 'passenger-class' && 'Review Travel Agreement'}
+                {wizardStep === 'agreement' && 'Review Booking'}
+                {wizardStep === 'review' && (isConnected ? `Confirm & Pay — ${body.priceEth} ETH` : 'Connect Wallet to Book')}
+              </button>
+            )}
           </div>
         </div>
       , document.body)}

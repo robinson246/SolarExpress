@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useMobile } from '@/lib/useMobile';
 import PlanetMenu from '@/components/menu/PlanetMenu';
 import SolarSystem from '@/components/scene/SolarSystem';
 import DestinationPanel from '@/components/panel/DestinationPanel';
 import RoutePanel from '@/components/panel/RoutePanel';
+import MobileExploreView from '@/components/panel/MobileExploreView';
 import { bodies } from '@/data/bodies';
 import { getTravelRoute } from '@/data/travel';
 import NavBar from '@/components/layout/NavBar';
@@ -18,6 +20,7 @@ import Link from 'next/link';
 export default function Home() {
   const router = useRouter();
   const { user, checkingSession } = useAuth();
+  const isMobile = useMobile();
   const [focusedPlanetId, setFocusedPlanetId] = useState<number | null>(null);
   const [selectedBodyId, setSelectedBodyId] = useState<number | null>(null);
   const [selectedMoonId, setSelectedMoonId] = useState<number | null>(null);
@@ -101,15 +104,22 @@ export default function Home() {
           </div>
         )}
 
-        {/* Center — Solar System */}
+        {/* Center — Solar System (desktop) or 2D Explore (mobile) */}
         <div className='flex-1 min-w-0 min-h-0 relative'>
-          <SolarSystem
-            bodies={bodies}
-            focusedPlanetId={focusedPlanetId}
-            selectedMoonId={selectedMoonId}
-            isFocused={isFocused}
-            onPlanetSelect={handlePlanetSelect}
-          />
+          {isMobile ? (
+            <MobileExploreView
+              selectedBodyId={selectedBodyId}
+              onSelectBody={handleSelectPlanetAndPanel}
+            />
+          ) : (
+            <SolarSystem
+              bodies={bodies}
+              focusedPlanetId={focusedPlanetId}
+              selectedMoonId={selectedMoonId}
+              isFocused={isFocused}
+              onPlanetSelect={handlePlanetSelect}
+            />
+          )}
         </div>
 
         {/* Right Panel — bottom sheet on mobile, sidebar on desktop */}
