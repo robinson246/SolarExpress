@@ -198,30 +198,30 @@ export default function NFTTicket({
 
       {/* Bottom-right logo watermark */}
       {!compact && (
-        <g opacity='0.2' transform={`translate(${width * 0.86}, ${height * 0.87}) scale(0.12)`}>
-          <circle cx='256' cy='256' r='84' fill='#FFB300' opacity='.25' filter={`url(#${LOGO_UID}-glow)`} />
+        <g opacity='0.4' transform={`translate(${width * 0.86}, ${height * 0.91}) scale(0.1)`}>
+          <circle cx='256' cy='256' r='84' fill='#FFB300' opacity='.3' filter={`url(#${LOGO_UID}-glow)`} />
           <circle cx='256' cy='256' r='70' fill={`url(#${LOGO_UID}-sun)`} />
-          <ellipse cx='256' cy='256' rx='170' ry='72' transform='rotate(-18 256 256)' fill='none' stroke={`url(#${LOGO_UID}-orbit)`} strokeWidth='6' />
+          <ellipse cx='256' cy='256' rx='170' ry='72' transform='rotate(-18 256 256)' fill='none' stroke={`url(#${LOGO_UID}-orbit)`} strokeWidth='8' />
           <g transform='translate(392 186) rotate(28)'>
             <path d='M0 -12 L22 0 L0 12 L6 4 L-14 4 L-8 0 L-14 -4 L6 -4 Z' fill='#FFFFFF' />
             <polygon points='-2,-5 -14,-15 -8,-3' fill='#D1D5DB' />
             <polygon points='-2,5 -14,15 -8,3' fill='#D1D5DB' />
-            <circle cx='10' cy='0' r='2' fill='#A78BFA' />
-            <path d='M-16 0 Q-38 -2 -58 0' fill='none' stroke='#8B5CF6' strokeWidth='4' strokeLinecap='round' />
+            <circle cx='10' cy='0' r='2.5' fill='#A78BFA' />
+            <path d='M-16 0 Q-38 -2 -58 0' fill='none' stroke='#8B5CF6' strokeWidth='5' strokeLinecap='round' />
           </g>
         </g>
       )}
       {compact && (
-        <g opacity='0.15' transform={`translate(${width * 0.8}, ${height * 0.85}) scale(0.06)`}>
-          <circle cx='256' cy='256' r='84' fill='#FFB300' opacity='.25' filter={`url(#${LOGO_UID}-glow)`} />
+        <g opacity='0.35' transform={`translate(${width * 0.82}, ${height * 0.88}) scale(0.055)`}>
+          <circle cx='256' cy='256' r='84' fill='#FFB300' opacity='.3' filter={`url(#${LOGO_UID}-glow)`} />
           <circle cx='256' cy='256' r='70' fill={`url(#${LOGO_UID}-sun)`} />
-          <ellipse cx='256' cy='256' rx='170' ry='72' transform='rotate(-18 256 256)' fill='none' stroke={`url(#${LOGO_UID}-orbit)`} strokeWidth='6' />
+          <ellipse cx='256' cy='256' rx='170' ry='72' transform='rotate(-18 256 256)' fill='none' stroke={`url(#${LOGO_UID}-orbit)`} strokeWidth='8' />
           <g transform='translate(392 186) rotate(28)'>
             <path d='M0 -12 L22 0 L0 12 L6 4 L-14 4 L-8 0 L-14 -4 L6 -4 Z' fill='#FFFFFF' />
             <polygon points='-2,-5 -14,-15 -8,-3' fill='#D1D5DB' />
             <polygon points='-2,5 -14,15 -8,3' fill='#D1D5DB' />
-            <circle cx='10' cy='0' r='2' fill='#A78BFA' />
-            <path d='M-16 0 Q-38 -2 -58 0' fill='none' stroke='#8B5CF6' strokeWidth='4' strokeLinecap='round' />
+            <circle cx='10' cy='0' r='2.5' fill='#A78BFA' />
+            <path d='M-16 0 Q-38 -2 -58 0' fill='none' stroke='#8B5CF6' strokeWidth='5' strokeLinecap='round' />
           </g>
         </g>
       )}
