@@ -334,9 +334,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => goToStep('departure-date')} className='w-full py-2.5 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer'>
-                    Continue
-                  </button>
                 </div>
               )}
 
@@ -357,13 +354,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       <p className='text-xs text-gray-400'>Departure: {new Date(departureDate).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })} at {autoLaunchTime} UTC</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => goToStep('availability')}
-                    disabled={!canProceedFromDate}
-                    className='w-full py-2.5 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed'
-                  >
-                    Continue
-                  </button>
                 </div>
               )}
 
@@ -434,9 +424,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => goToStep('passenger-class')} className='w-full py-2.5 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer'>
-                    Continue
-                  </button>
                 </div>
               )}
 
@@ -481,9 +468,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       })}
                     </div>
                   </div>
-                  <button onClick={() => goToStep('agreement')} className='w-full py-2.5 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer'>
-                    Continue
-                  </button>
                 </div>
               )}
 
@@ -511,13 +495,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       </span>
                     </label>
                   </div>
-                  <button
-                    onClick={() => goToStep('review')}
-                    disabled={!canProceedFromAgreement}
-                    className='w-full py-2.5 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition-colors cursor-pointer disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed'
-                  >
-                    Continue
-                  </button>
                 </div>
               )}
 
