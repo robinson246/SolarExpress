@@ -177,6 +177,24 @@ export default function NFTTicket({
           </text>
         </>
       )}
+
+      {/* Bottom-right logo watermark */}
+      {!compact && (
+        <g opacity='0.15'>
+          <circle cx={width * 0.88} cy={height * 0.93} r={28} fill='none' stroke='white' strokeWidth={1.5} />
+          <text x={width * 0.88} y={height * 0.93 + 6} fill='white' fontSize={16} fontFamily='Arial' fontWeight='bold' textAnchor='middle'>
+            SE
+          </text>
+        </g>
+      )}
+      {compact && (
+        <g opacity='0.12'>
+          <circle cx={width * 0.84} cy={height * 0.9} r={14} fill='none' stroke='white' strokeWidth={1} />
+          <text x={width * 0.84} y={height * 0.9 + 3.5} fill='white' fontSize={8} fontFamily='Arial' fontWeight='bold' textAnchor='middle'>
+            SE
+          </text>
+        </g>
+      )}
     </svg>
   );
 }
