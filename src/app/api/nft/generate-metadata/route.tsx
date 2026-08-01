@@ -5,7 +5,7 @@ import { TICKET_SALE_ADDRESS } from '@/lib/contract';
 import { bodies } from '@/data/bodies';
 import { generateNFTTicketSVG } from '@/lib/generate-nft-svg';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
+const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const RPC_URLS = [
   'https://ethereum-sepolia.publicnode.com',

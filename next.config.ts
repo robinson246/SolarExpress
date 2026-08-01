@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const API_BACKEND = process.env.API_BACKEND_URL || 'http://localhost:4000';
+const API_BACKEND = process.env.API_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const nextConfig: NextConfig = {
   async rewrites() {
