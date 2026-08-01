@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { TICKET_SALE_ADDRESS, TICKET_SALE_ABI } from '@/lib/contract';
-import { parseEther, decodeEventLog, createPublicClient, http } from 'viem';
+import { parseEther, decodeEventLog, createPublicClient, http, fallback } from 'viem';
 import { sepolia } from 'viem/chains';
 import { getTransactionReceipt } from 'viem/actions';
 import type { TransactionReceipt, Log } from 'viem';
 
 const TX_HASH_KEY = 'solarexpress_pending_tx';
-const PREPARING_KEY = 'solarexpress_preparing';
 
 export type TicketStep = 'idle' | 'preparing' | 'pending' | 'broadcasting' | 'confirming' | 'success' | 'error';
 
@@ -21,19 +20,16 @@ export type BuyTicketResult = {
 export function useBuyTicket() {
   const [manualReceipt, setManualReceipt] = useState<TransactionReceipt | null>(null);
   const [manualTokenId, setManualTokenId] = useState<number | null>(null);
-  const [restoredHash, setRestoredHash] = useState<`0x${string}` | null>(null);
-  const checkingRef = useRef(false);
-
-  useEffect(() => {
-    const saved = sessionStorage.getItem(TX_HASH_KEY);
-    if (saved) {
-      try {
-        setRestoredHash(saved as `0x${string}`);
-      } catch {
-        sessionStorage.removeItem(TX_HASH_KEY);
-      }
+  const [restoredHash, setRestoredHash] = useState<`0x${string}` | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return sessionStorage.getItem(TX_HASH_KEY) as `0x${string}` | null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
+  const [writeError, setWriteError] = useState<Error | null>(null);
+  const checkingRef = useRef(false);
 
   const {
     writeContractAsync,
@@ -82,7 +78,12 @@ export function useBuyTicket() {
     try {
       const publicClient = createPublicClient({
         chain: sepolia,
-        transport: http(),
+        transport: fallback([
+          http('https://ethereum-sepolia.publicnode.com'),
+          http('https://1rpc.io/sepolia'),
+          http('https://sepolia.drpc.org'),
+          http('https://sepolia.gateway.tenderly.co'),
+        ], { rank: true }),
       });
       const rcpt = await getTransactionReceipt(publicClient, { hash: activeHash });
       if (rcpt && rcpt.status === 'success') {
@@ -108,7 +109,6 @@ export function useBuyTicket() {
   useEffect(() => {
     if (resolvedIsConfirmed && resolvedTokenId !== null) {
       sessionStorage.removeItem(TX_HASH_KEY);
-      setRestoredHash(null);
     }
   }, [resolvedIsConfirmed, resolvedTokenId]);
 
@@ -116,25 +116,29 @@ export function useBuyTicket() {
     destinationId: number,
     priceEth: string,
     metadataURI = '',
+    travelClass = 'economy',
   ): Promise<BuyTicketResult | null> {
     try {
       resetWrite();
+      setWriteError(null);
       sessionStorage.removeItem(TX_HASH_KEY);
       setRestoredHash(null);
       setManualReceipt(null);
       setManualTokenId(null);
       setPreparing(true);
+      const classId = travelClass === 'business' ? 1 : travelClass === 'first' ? 2 : 0;
       const hash = await writeContractAsync({
         address: TICKET_SALE_ADDRESS,
         abi: TICKET_SALE_ABI,
         functionName: 'buyTicket',
-        args: [BigInt(destinationId), metadataURI],
+        args: [BigInt(destinationId), classId, metadataURI],
         value: parseEther(priceEth),
       });
       setPreparing(false);
       return { transactionHash: hash, tokenId: 0 };
-    } catch {
+    } catch (err) {
       setPreparing(false);
+      setWriteError(err instanceof Error ? err : new Error(String(err)));
       return null;
     }
   }
@@ -148,6 +152,7 @@ export function useBuyTicket() {
   else if (isConfirming && !resolvedIsConfirmed) step = 'confirming';
   else if (resolvedIsConfirmed) step = 'success';
   else if (isTxError) step = 'error';
+  else if (writeError && !activeHash) step = 'error';
   else if (activeHash) step = 'broadcasting';
 
   return {
@@ -156,7 +161,8 @@ export function useBuyTicket() {
     txHash: activeHash,
     tokenId: resolvedTokenId,
     error: txError,
-    reset: () => { setPreparing(false); resetWrite(); },
+    writeError,
+    reset: () => { setPreparing(false); setWriteError(null); resetWrite(); },
     checkReceipt,
   };
 }

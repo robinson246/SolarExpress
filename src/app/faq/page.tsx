@@ -32,7 +32,7 @@ const FAQ_ITEMS = [
     questions: [
       { q: 'What currency is used?', a: 'All payments are in Sepolia ETH, the native currency of the Sepolia test network. Prices are fixed per destination and displayed before booking.' },
       { q: 'Are there any refunds?', a: 'Blockchain transactions are irreversible. Once a ticket is purchased and the NFT is minted, refunds are not possible. This is a core feature of blockchain-based ticketing.' },
-      { q: 'Why is only Economy Class available?', a: 'Business and First Class are planned for future updates. The system is built to support additional classes — they will become available by toggling a configuration flag without requiring code changes.' },
+      { q: 'Which passenger classes are available?', a: 'Economy and Business Class are available. First Class is planned for a future update and will be enabled by a configuration flag.' },
     ],
   },
   {

@@ -5,12 +5,12 @@ import { createPortal } from 'react-dom';
 import { useConnection } from 'wagmi';
 import { useAuth } from '@/lib/auth-context';
 import { setIsModalOpen } from '@/lib/modal-store';
-import { useBuyTicket, type TicketStep } from '@/hooks/useBuyTicket';
+import { useBuyTicket } from '@/hooks/useBuyTicket';
 import { useSyncBooking } from '@/hooks/useSyncBooking';
 import { useQueryClient } from '@tanstack/react-query';
 import { generateNFTMetadata } from '@/lib/nft-service';
-import { bodies, type Body } from '@/data/bodies';
-import { getTravelRoute, generateFlightDetails, PASSENGER_CLASSES, type FlightDetails } from '@/data/travel';
+import { bodies } from '@/data/bodies';
+import { getTravelRoute, generateFlightDetails, getClassPriceEth, PASSENGER_CLASSES, type FlightDetails } from '@/data/travel';
 import NFTTicket from '@/components/nft/NFTTicket';
 import { LoadingSpinner } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
@@ -53,7 +53,6 @@ function BookingProgress({ currentStep }: { currentStep: WizardStep }) {
         {showSteps.map((s, i) => {
           const isPast = i < currentIdx;
           const isCurrent = i === currentIdx;
-          const isFuture = i > currentIdx;
           return (
             <div key={s} className='flex items-center gap-0 sm:gap-1 min-w-0'>
               {/* Step dot */}
@@ -94,38 +93,31 @@ function BookingProgress({ currentStep }: { currentStep: WizardStep }) {
 export default function BookTicketButton({ selectedBodyId }: BookTicketButtonProps) {
   const { isConnected, address } = useConnection();
   const { user } = useAuth();
-  const { buyTicket, step: txStep, txHash, tokenId, error: txError, reset: resetTx, checkReceipt } = useBuyTicket();
+  const { buyTicket, step: txStep, txHash, tokenId, error: txError, writeError, reset: resetTx, checkReceipt } = useBuyTicket();
   const syncMutation = useSyncBooking();
   const queryClient = useQueryClient();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState<WizardStep>('travel-info');
   const [departureDate, setDepartureDate] = useState('');
-  const [departureTime] = useState('');
-  const [seatNumber] = useState('');
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [travelClass, setTravelClass] = useState('economy');
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [dbStatus, setDbStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-  const [metadataUri, setMetadataUri] = useState<string>('');
   const [metadataError, setMetadataError] = useState<string | null>(null);
-  const metadataGeneratingRef = useRef(false);
+  const [metadataGenerating, setMetadataGenerating] = useState(false);
   const triggeredRef = useRef(false);
 
   const body = selectedBodyId ? bodies.find(b => b.id === selectedBodyId) ?? null : null;
   const route = body && body.id !== 3 ? getTravelRoute(body.id) : null;
+  const ticketPriceEth = body ? getClassPriceEth(body.priceEth, travelClass) : '0';
 
-  const flightDetailsRef = useRef<FlightDetails | null>(null);
-  if (!flightDetailsRef.current && body) {
-    flightDetailsRef.current = generateFlightDetails(body.id);
-  }
-  const fd = flightDetailsRef.current;
-  const autoLaunchTime = fd?.departureTime ?? '12:00';
-  const autoLaunchTerminal = fd?.launchTerminal ?? 'Earth Orbital Gateway';
-  const autoFlightNumber = fd?.flightNumber ?? 'SX000';
-  const generatedSeat = fd?.seatNumber ?? '1A';
-  const bookingRef = fd?.bookingReference ?? '';
-  const depDate = fd?.departureDate ?? '';
+  const [flightDetails, setFlightDetails] = useState<FlightDetails | null>(null);
+  const autoLaunchTime = flightDetails?.departureTime ?? '12:00';
+  const autoLaunchTerminal = flightDetails?.launchTerminal ?? 'Earth Orbital Gateway';
+  const autoFlightNumber = flightDetails?.flightNumber ?? 'SX000';
+  const generatedSeat = flightDetails?.seatNumber ?? '1A';
+  const bookingRef = flightDetails?.bookingReference ?? '';
 
   const goToStep = useCallback((step: WizardStep) => {
     setWizardStep(step);
@@ -148,11 +140,10 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
     setTravelClass('economy');
     setAgreementAccepted(false);
     setDbStatus('idle');
-    setMetadataUri('');
     setMetadataError(null);
-    metadataGeneratingRef.current = false;
+    setMetadataGenerating(false);
     triggeredRef.current = false;
-    flightDetailsRef.current = generateFlightDetails(body.id);
+    setFlightDetails(generateFlightDetails(body.id));
   };
 
   const handleCloseWizard = () => {
@@ -160,9 +151,8 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
     setIsModalOpen(false);
     resetTx();
     setDbStatus('idle');
-    setMetadataUri('');
     setMetadataError(null);
-    metadataGeneratingRef.current = false;
+    setMetadataGenerating(false);
     triggeredRef.current = false;
   };
 
@@ -189,8 +179,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
     if (!selectedBodyId || !body) return;
 
     triggeredRef.current = true;
-    setDbStatus('syncing');
-    setWizardStep('payment');
 
     syncMutation.mutate(
       {
@@ -198,7 +186,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
         destinationId: body.id,
         transactionHash: txHash,
         tokenId,
-        pricePaid: body.priceEth,
+        pricePaid: ticketPriceEth,
         bookingReference: bookingRef,
         departureDate,
         departureTime: autoLaunchTime,
@@ -223,7 +211,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
         },
       },
     );
-  }, [txStep, tokenId, address, user, txHash, selectedBodyId, body, syncMutation, queryClient, departureDate, autoLaunchTime, travelClass, generatedSeat, autoFlightNumber, autoLaunchTerminal, bookingRef]);
+  }, [txStep, tokenId, address, user, txHash, selectedBodyId, body, syncMutation, queryClient, departureDate, autoLaunchTime, travelClass, generatedSeat, autoFlightNumber, autoLaunchTerminal, bookingRef, ticketPriceEth]);
 
   const handleRetrySync = () => {
     if (!address || !user || !txHash || tokenId == null || !selectedBodyId || !body) return;
@@ -235,7 +223,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
         destinationId: body.id,
         transactionHash: txHash,
         tokenId,
-        pricePaid: body.priceEth,
+        pricePaid: ticketPriceEth,
         bookingReference: bookingRef,
         departureDate,
         departureTime: autoLaunchTime,
@@ -270,10 +258,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
     );
   }
 
-  const canProceedFromTravelInfo = true;
   const canProceedFromDate = departureDate !== '';
-  const canProceedFromAvailability = availabilityChecked;
-  const canProceedFromClass = true;
   const canProceedFromAgreement = agreementAccepted;
 
   return (
@@ -552,7 +537,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       </div>
                       <div className='flex justify-between py-1.5 border-b border-gray-800/60'>
                         <span className='text-gray-500'>Price</span>
-                        <span className='text-emerald-400 font-mono font-bold'>{body.priceEth} ETH</span>
+                        <span className='text-emerald-400 font-mono font-bold'>{ticketPriceEth} ETH</span>
                       </div>
                       <div className='flex justify-between py-1.5 border-b border-gray-800/60'>
                         <span className='text-gray-500'>Network</span>
@@ -573,13 +558,13 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
               {/* ─── Step 8: Payment / Blockchain Flow ─── */}
               {wizardStep === 'payment' && (
                 <div className='space-y-4'>
-                  {(metadataGeneratingRef.current || metadataError) && txStep === 'idle' && (
+                  {(metadataGenerating || metadataError) && txStep === 'idle' && (
                     metadataError ? (
                       <div className='bg-red-900/20 border border-red-700/30 rounded-xl p-4 space-y-3'>
                         <p className='text-sm font-medium text-red-300'>Metadata Generation Failed</p>
                         <p className='text-xs text-red-200/70'>{metadataError}</p>
                         <button
-                          onClick={() => { setWizardStep('review'); metadataGeneratingRef.current = false; setMetadataError(null); }}
+                          onClick={() => { setWizardStep('review'); setMetadataGenerating(false); setMetadataError(null); }}
                           className='text-xs text-gray-400 hover:text-white underline underline-offset-2 cursor-pointer'
                         >
                           Back to review
@@ -593,7 +578,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       </div>
                     )
                   )}
-                  {(txStep === 'idle' || txStep === 'preparing') && !metadataGeneratingRef.current && !metadataError && (
+                  {txStep === 'preparing' && !metadataGenerating && !metadataError && (
                     <div className='bg-violet-900/20 border border-violet-700/30 rounded-xl p-4 text-center space-y-3'>
                       <LoadingSpinner size={32} className='mx-auto' />
                       <p className='text-sm text-violet-300'>Preparing Transaction...</p>
@@ -623,16 +608,35 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       )}
                     </div>
                   )}
-                  {txStep === 'error' && txError && (
+                  {txStep === 'success' && (
+                    <div className='bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-4 text-center space-y-3'>
+                      <LoadingSpinner size={32} className='mx-auto' />
+                      <p className='text-sm text-emerald-300'>Transaction confirmed — finalizing your booking...</p>
+                      {txHash && (
+                        <a href={`${SEPOLIA_ETHERSCAN}/${txHash}`} target='_blank' rel='noopener noreferrer' className='text-[11px] text-violet-400 hover:text-violet-300 underline underline-offset-2 inline-block'>
+                          View transaction on Etherscan
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {txStep === 'error' && (txError || writeError) && (
                     <div className='bg-red-900/20 border border-red-700/30 rounded-xl p-4 space-y-3'>
                       <p className='text-sm font-medium text-red-300'>Transaction Failed</p>
-                      <p className='text-xs text-red-200/70'>{formatError(txError)}</p>
-                      <button onClick={() => setWizardStep('review')} className='text-xs text-gray-400 hover:text-white underline underline-offset-2 cursor-pointer'>
+                      <p className='text-xs text-red-200/70'>{formatError((txError || writeError) as Error)}</p>
+                      <button onClick={() => { resetTx(); setWizardStep('review'); }} className='text-xs text-gray-400 hover:text-white underline underline-offset-2 cursor-pointer'>
                         Back to review
                       </button>
                     </div>
                   )}
-                  {dbStatus === 'syncing' && (
+                  {txStep === 'idle' && !metadataGenerating && !metadataError && !writeError && (
+                    <div className='bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 space-y-3 text-center'>
+                      <p className='text-sm text-gray-300'>Nothing to process.</p>
+                      <button onClick={() => setWizardStep('review')} className='text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2 cursor-pointer'>
+                        Back to review
+                      </button>
+                    </div>
+                  )}
+                  {(dbStatus === 'syncing' || syncMutation.isPending) && (
                     <div className='bg-violet-900/20 border border-violet-700/30 rounded-xl p-4 text-center space-y-3'>
                       <LoadingSpinner size={28} className='mx-auto' />
                       <p className='text-xs text-violet-300'>Saving booking to database...</p>
@@ -662,7 +666,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                   </div>
 
                   <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl overflow-hidden'>
-                    <NFTTicket destinationId={body.id} tokenId={tokenId} priceEth={body.priceEth} />
+                    <NFTTicket destinationId={body.id} tokenId={tokenId} priceEth={ticketPriceEth} />
                   </div>
 
                   <div className='bg-white/[0.04] border border-white/[0.06] rounded-xl p-4 space-y-2 text-xs'>
@@ -741,20 +745,19 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                   else if (wizardStep === 'passenger-class') goToStep('agreement');
                   else if (wizardStep === 'agreement') { if (canProceedFromAgreement) goToStep('review'); }
                   else if (wizardStep === 'review') {
-                    if (isConnected && body && !metadataGeneratingRef.current) {
+                    if (isConnected && body && !metadataGenerating) {
                       setWizardStep('payment');
-                      metadataGeneratingRef.current = true;
+                      setMetadataGenerating(true);
                       setMetadataError(null);
-                      generateNFTMetadata(body.id, body.priceEth, address)
+                      generateNFTMetadata(body.id, ticketPriceEth, address, travelClass)
                         .then((result) => {
-                          setMetadataUri(result.metadataUri);
-                          metadataGeneratingRef.current = false;
-                          buyTicket(body.id, body.priceEth, result.metadataUri);
+                          setMetadataGenerating(false);
+                          buyTicket(body.id, ticketPriceEth, result.metadataUri, travelClass);
                         })
                         .catch((err) => {
                           console.error('[metadata] generation failed:', err);
                           setMetadataError(err instanceof Error ? err.message : 'Failed to generate NFT metadata');
-                          metadataGeneratingRef.current = false;
+                          setMetadataGenerating(false);
                         });
                     }
                   }
@@ -772,7 +775,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                 {wizardStep === 'flight' && 'Select Passenger Class'}
                 {wizardStep === 'passenger-class' && 'Review Travel Agreement'}
                 {wizardStep === 'agreement' && 'Review Booking'}
-                {wizardStep === 'review' && (isConnected ? `Confirm & Pay — ${body.priceEth} ETH` : 'Connect Wallet to Book')}
+                {wizardStep === 'review' && (isConnected ? `Confirm & Pay — ${ticketPriceEth} ETH` : 'Connect Wallet to Book')}
               </button>
             )}
           </div>

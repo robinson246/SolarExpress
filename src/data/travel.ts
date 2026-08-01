@@ -1,3 +1,5 @@
+import { parseEther, formatEther } from 'viem';
+
 export type TravelRoute = {
   origin: string;
   destination: string;
@@ -7,6 +9,11 @@ export type TravelRoute = {
   launchTimeUTC: string;
   flightNumber: string;
 };
+
+export function getClassPriceEth(priceEth: string, travelClass: string): string {
+  if (travelClass !== 'business') return priceEth;
+  return formatEther((parseEther(priceEth) * 5n) / 2n);
+}
 
 const LAUNCH_TIMES: Record<number, string> = {
   1: '08:00',   // Mercury
@@ -129,7 +136,7 @@ export function generateBookingReference(): string {
 
 export const PASSENGER_CLASSES = [
   { id: 'economy', label: 'Economy Class', available: true, description: 'Standard travel with all essential amenities.' },
-  { id: 'business', label: 'Business Class', available: false, description: '🔒 Temporarily Unavailable' },
+  { id: 'business', label: 'Business Class', available: true, description: 'Priority boarding, extra legroom, and premium amenities.' },
   { id: 'first', label: 'First Class', available: false, description: '🔒 Temporarily Unavailable' },
 ] as const;
 
