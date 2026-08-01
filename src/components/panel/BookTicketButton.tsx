@@ -788,13 +788,11 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
 
 function formatError(err: Error): string {
   const msg = err.message || '';
-  if (msg.includes('User denied') || msg.includes('user rejected') || msg.includes('ethers://'))
+  if (msg.includes('User denied') || msg.includes('user rejected') || msg.includes('ethers://') || msg.includes('ACTION_REJECTED'))
     return 'Transaction cancelled.';
   if (msg.includes('insufficient funds') || msg.includes('Insufficient balance'))
     return 'Insufficient funds for this transaction.';
-  if (msg.includes('wrong network') || msg.includes('chain'))
+  if (msg.includes('wrong network') || msg.includes('UNSUPPORTED_CHAIN') || msg.includes('chainId'))
     return 'Please switch to the Sepolia network.';
-  if (msg.includes('0x'))
-    return `Contract error: ${msg.slice(0, 120)}`;
-  return msg.length > 150 ? msg.slice(0, 150) + '...' : msg;
+  return msg.length > 600 ? `${msg.slice(0, 600)}...` : msg;
 }
