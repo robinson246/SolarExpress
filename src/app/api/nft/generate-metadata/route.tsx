@@ -1,16 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http, parseAbiItem } from 'viem';
+import { createPublicClient, http, parseAbiItem, fallback } from 'viem';
 import { sepolia } from 'viem/chains';
 import { TICKET_SALE_ADDRESS } from '@/lib/contract';
 import { bodies } from '@/data/bodies';
+import { generateNFTTicketSVG } from '@/lib/generate-nft-svg';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
-const SEPOLIA_RPC = process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://rpc.sepolia.org';
+
+const RPC_URLS = [
+  'https://ethereum-sepolia.publicnode.com',
+  'https://1rpc.io/sepolia',
+  'https://sepolia.drpc.org',
+  'https://sepolia.gateway.tenderly.co',
+];
+
+const RPC_TIMEOUT_MS = 10_000;
+const RECENT_BLOCK_WINDOW = 100_000n;
+const CHUNK_SIZE = 50_000n;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`RPC request timed out after ${ms}ms`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
 
 async function predictNextTokenId(): Promise<number> {
   const publicClient = createPublicClient({
     chain: sepolia,
-    transport: http(SEPOLIA_RPC),
+    transport: fallback(
+      RPC_URLS.map(url => http(url, { timeout: RPC_TIMEOUT_MS })),
+      { rank: true },
+    ),
   });
 
   const eventAbi = parseAbiItem(
@@ -20,36 +50,29 @@ async function predictNextTokenId(): Promise<number> {
   const tokenIds: number[] = [];
 
   try {
-    const fromBlock = 6780000n;
-    const latestBlock = await publicClient.getBlockNumber();
-    const chunkSize = 50000n;
+    const latestBlock = await withTimeout(publicClient.getBlockNumber(), RPC_TIMEOUT_MS);
+    const fromBlock = latestBlock > RECENT_BLOCK_WINDOW ? latestBlock - RECENT_BLOCK_WINDOW : 6780000n;
 
-    for (let start = fromBlock; start < latestBlock; start += chunkSize) {
-      const end = start + chunkSize > latestBlock ? latestBlock : start + chunkSize;
-      const logs = await publicClient.getLogs({
-        address: TICKET_SALE_ADDRESS,
-        event: eventAbi,
-        fromBlock: start,
-        toBlock: end,
-      });
+    for (let start = fromBlock; start <= latestBlock; start += CHUNK_SIZE) {
+      const end = start + CHUNK_SIZE > latestBlock ? latestBlock : start + CHUNK_SIZE;
+      const logs = await withTimeout(
+        publicClient.getLogs({
+          address: TICKET_SALE_ADDRESS,
+          event: eventAbi,
+          fromBlock: start,
+          toBlock: end,
+        }),
+        RPC_TIMEOUT_MS,
+      );
       for (const log of logs) {
         if ('args' in log && log.args.tokenId !== undefined) {
           tokenIds.push(Number(log.args.tokenId));
         }
       }
     }
-  } catch {
-    const logs = await publicClient.getLogs({
-      address: TICKET_SALE_ADDRESS,
-      event: eventAbi,
-      fromBlock: 0n,
-      toBlock: 'latest',
-    });
-    for (const log of logs) {
-      if ('args' in log && log.args.tokenId !== undefined) {
-        tokenIds.push(Number(log.args.tokenId));
-      }
-    }
+  } catch (err) {
+    console.error('[generate-metadata] Could not predict next token ID, defaulting to 0:', err);
+    return 0;
   }
 
   return tokenIds.length > 0 ? Math.max(...tokenIds) + 1 : 0;
@@ -57,7 +80,8 @@ async function predictNextTokenId(): Promise<number> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { destinationId, priceEth, walletAddress } = await req.json();
+    const { destinationId, priceEth, walletAddress, travelClass } = await req.json();
+    const passengerClass = typeof travelClass === 'string' && travelClass.length > 0 ? travelClass : 'economy';
 
     if (destinationId == null || !priceEth) {
       return NextResponse.json(
@@ -76,24 +100,18 @@ export async function POST(req: NextRequest) {
 
     const predictedTokenId = await predictNextTokenId();
 
-    const { renderToString } = await import('react-dom/server');
-    const { default: NFTTicket } = await import('@/components/nft/NFTTicket');
-
-    const svg = renderToString(
-      <NFTTicket
-        destinationId={destinationId}
-        tokenId={predictedTokenId}
-        priceEth={priceEth}
-        walletAddress={walletAddress}
-      />,
-    );
-
-    const fullSvg = `<?xml version="1.0" encoding="UTF-8"?>${svg}`;
+    const fullSvg = generateNFTTicketSVG({
+      destinationId,
+      tokenId: predictedTokenId,
+      priceEth,
+      walletAddress,
+      passengerClass,
+    });
 
     const ticketName = `SolarExpress Ticket #${predictedTokenId}`;
     const attributes = [
       { trait_type: 'Destination', value: body.name },
-      { trait_type: 'Passenger Class', value: 'Economy' },
+      { trait_type: 'Passenger Class', value: passengerClass },
       { trait_type: 'Price', value: `${priceEth} ETH` },
       { trait_type: 'Network', value: 'Sepolia' },
       { trait_type: 'Token ID', value: String(predictedTokenId) },
