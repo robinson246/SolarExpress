@@ -71,24 +71,29 @@ const PlanetMenu: React.FC<PlanetMenuProps> = ({ onPlanetSelect, selectedBodyId 
           <h3 className='text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1.5 px-1'>Favorites</h3>
           <div className='space-y-0.5'>
             {favoriteBodies.map(body => (
-              <button
+              <div
                 key={body.id}
+                role='button'
+                tabIndex={0}
                 onClick={() => onPlanetSelect(body.id)}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-left transition-all cursor-pointer ${
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPlanetSelect(body.id); } }}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all cursor-pointer ${
                   selectedBodyId === body.id
                     ? 'bg-violet-500/10 text-violet-300 border border-violet-500/20'
                     : 'text-gray-300 hover:bg-white/5 border border-transparent'
                 }`}
               >
                 <button
+                  type='button'
+                  aria-label={favorites.includes(body.id) ? 'Remove from favorites' : 'Add to favorites'}
                   onClick={(e) => { e.stopPropagation(); toggleFavorite(body.id); }}
-                  className='text-[10px] text-amber-400 hover:text-amber-300 cursor-pointer'
+                  className='text-[10px] text-amber-400 hover:text-amber-300 cursor-pointer px-0.5'
                 >
                   ★
                 </button>
                 <span>{body.name}</span>
                 <span className='text-[9px] text-gray-600 ml-auto'>{body.type === 'planet' ? 'Planet' : 'Moon'}</span>
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -107,8 +112,9 @@ const PlanetMenu: React.FC<PlanetMenuProps> = ({ onPlanetSelect, selectedBodyId 
               <div key={planet.id}>
                 {/* Planet row */}
                 <button
+                  type='button'
                   onClick={() => { toggleExpand(planet.id); onPlanetSelect(planet.id); }}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-left transition-all cursor-pointer ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all cursor-pointer ${
                     selectedBodyId === planet.id
                       ? 'bg-violet-500/10 text-violet-300 border border-violet-500/20'
                       : 'text-gray-300 hover:bg-white/5 border border-transparent'
@@ -130,8 +136,9 @@ const PlanetMenu: React.FC<PlanetMenuProps> = ({ onPlanetSelect, selectedBodyId 
                     {moons.map(moon => (
                       <button
                         key={moon.id}
+                        type='button'
                         onClick={() => onPlanetSelect(moon.id)}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-left transition-all cursor-pointer ${
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all cursor-pointer ${
                           selectedBodyId === moon.id
                             ? 'bg-violet-500/10 text-violet-300 border border-violet-500/20'
                             : 'text-gray-300 hover:bg-white/5 border border-transparent'

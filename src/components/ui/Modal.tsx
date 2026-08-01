@@ -44,6 +44,8 @@ export default function Modal({ open, onClose, children, maxWidth = 'max-w-lg' }
         onClick={(e) => e.stopPropagation()}
       >
         <button
+          type='button'
+          aria-label='Close dialog'
           onClick={onClose}
           className='absolute top-5 right-5 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/60 text-gray-400 hover:text-white hover:bg-gray-700 text-sm cursor-pointer backdrop-blur-sm border border-gray-700/50 transition-colors'
         >

@@ -45,6 +45,8 @@ export default function UserProfile() {
   return (
     <div ref={dropdownRef} className='relative'>
       <button
+        type='button'
+        aria-label='Account menu'
         onClick={() => setDropdownOpen(!dropdownOpen)}
         className='flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700/50 transition-colors cursor-pointer'
       >

@@ -89,7 +89,7 @@ export default function LoadingScreen({ message, visible = true }: LoadingScreen
   if (!show) return null;
 
   return (
-    <div className='fixed inset-0 z-[100] flex flex-col items-center justify-center' style={{ background: '#08111F' }}>
+    <div className='fixed inset-0 z-[100] flex flex-col items-center justify-center' role='status' aria-live='polite' style={{ background: '#08111F' }}>
       <style>{`
         @keyframes ls-fade-up {
           from { opacity: 0; transform: translateY(8px); }
@@ -97,6 +97,9 @@ export default function LoadingScreen({ message, visible = true }: LoadingScreen
         }
         .ls-fade-in {
           animation: ls-fade-up 0.6s ease-out both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ls-fade-in { animation: none; }
         }
       `}</style>
       <LoadingSpinner size={160} />

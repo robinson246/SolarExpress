@@ -51,7 +51,7 @@ export default function NavBar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
                   active
                     ? 'text-violet-300 bg-violet-500/10 border border-violet-500/20'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
@@ -68,8 +68,10 @@ export default function NavBar() {
         {/* Notifications */}
         <div ref={notifRef} className='relative'>
           <button
+            type='button'
+            aria-label='Notifications'
             onClick={() => setNotifOpen(!notifOpen)}
-            className='relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer'
+            className='relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/5 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer'
           >
             <svg className='w-4 h-4' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
               <path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9' /><path d='M13.73 21a2 2 0 0 1-3.46 0' />
@@ -113,6 +115,8 @@ export default function NavBar() {
           {user ? (
             <>
               <button
+                type='button'
+                aria-label='Account menu'
                 onClick={() => setProfileOpen(!profileOpen)}
                 className='flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer'
               >

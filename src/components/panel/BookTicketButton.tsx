@@ -284,7 +284,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
             <div className='shrink-0 sticky top-0 z-20 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800 px-4 sm:px-6 py-3 sm:py-4 overflow-x-hidden'>
               <div className='flex items-center justify-between mb-2'>
                 <h2 className='text-sm sm:text-base font-bold text-white'>Book Your Flight</h2>
-                <button onClick={handleCloseWizard} className='w-7 h-7 flex items-center justify-center rounded-full bg-gray-800 text-gray-400 hover:text-white text-xs cursor-pointer border border-gray-700 shrink-0'>✕</button>
+                <button type='button' aria-label='Close booking wizard' onClick={handleCloseWizard} className='w-9 h-9 flex items-center justify-center rounded-full bg-gray-800 text-gray-400 hover:text-white text-xs cursor-pointer border border-gray-700 shrink-0'>✕</button>
               </div>
               <BookingProgress currentStep={wizardStep} />
             </div>
