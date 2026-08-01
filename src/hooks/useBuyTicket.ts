@@ -133,6 +133,7 @@ export function useBuyTicket() {
         functionName: 'buyTicket',
         args: [BigInt(destinationId), classId, metadataURI],
         value: parseEther(priceEth),
+        gas: 200_000n,
       });
       setPreparing(false);
       return { transactionHash: hash, tokenId: 0 };
