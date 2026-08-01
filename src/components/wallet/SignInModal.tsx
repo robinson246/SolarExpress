@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import Modal from '@/components/ui/Modal';
 
@@ -15,12 +15,12 @@ export default function SignInModal({ open, onClose }: SignInModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    if (!open) return;
+  const handleClose = () => {
     setEmail('');
     setPassword('');
     setIsSignUp(false);
-  }, [open]);
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,14 +30,14 @@ export default function SignInModal({ open, onClose }: SignInModalProps) {
       } else {
         await signIn(email, password);
       }
-      onClose();
+      handleClose();
     } catch {
       // error is in context state
     }
   };
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth='max-w-sm'>
+    <Modal open={open} onClose={handleClose} maxWidth='max-w-sm'>
       <div className='p-6 space-y-5'>
         <div className='flex items-center justify-between'>
           <h2 className='text-lg font-semibold text-white'>

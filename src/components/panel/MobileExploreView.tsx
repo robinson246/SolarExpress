@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { bodies, type Body } from '@/data/bodies';
-import { getTravelRoute } from '@/data/travel';
+import { bodies } from '@/data/bodies';
 
 interface MobileExploreViewProps {
   selectedBodyId: number | null;

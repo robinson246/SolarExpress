@@ -1,18 +1,16 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useConnection, useConnect } from 'wagmi';
 import SignInModal from './SignInModal';
 
 export default function UserProfile() {
-  const { user, signOut, refreshUser } = useAuth();
+  const { user, signOut } = useAuth();
   const { isConnected, address } = useConnection();
   const { mutate: connect, connectors } = useConnect();
   const [showModal, setShowModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [linking, setLinking] = useState(false);
-  const [linkError, setLinkError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,27 +23,6 @@ export default function UserProfile() {
     window.addEventListener('mousedown', handler);
     return () => window.removeEventListener('mousedown', handler);
   }, [dropdownOpen]);
-
-  const linkWallet = useCallback(async () => {
-    if (!address || !isConnected) return;
-    setLinking(true);
-    setLinkError(null);
-    try {
-      const res = await fetch('/api/users/wallet', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: address }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || `Failed to link wallet (${res.status})`);
-      await refreshUser();
-    } catch (err) {
-      setLinkError(err instanceof Error ? err.message : 'Failed to link wallet');
-    } finally {
-      setLinking(false);
-    }
-  }, [address, isConnected, refreshUser]);
 
   const walletLinked = user?.walletAddress || null;
 
@@ -118,9 +95,6 @@ export default function UserProfile() {
                 >
                   Connect MetaMask
                 </button>
-                {linkError && (
-                  <p className='text-[10px] text-red-400'>{linkError}</p>
-                )}
               </div>
             )}
           </div>

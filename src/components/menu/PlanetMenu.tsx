@@ -48,7 +48,6 @@ const PlanetMenu: React.FC<PlanetMenuProps> = ({ onPlanetSelect, selectedBodyId 
   };
 
   const favoriteBodies = bodies.filter(b => favorites.includes(b.id));
-  const getParentName = (parentId: number) => planets.find(p => p.id === parentId)?.name ?? '';
 
   return (
     <div className='w-full p-3 space-y-3'>

@@ -10,7 +10,6 @@ import { useTokenURI } from '@/hooks/useTicketInfo';
 import { TICKET_NFT_ADDRESS } from '@/lib/contract';
 
 import { bodies } from '@/data/bodies';
-import { getTravelRoute } from '@/data/travel';
 import { useConnection, useConnect } from 'wagmi';
 import { formatEther } from 'viem';
 import { useQuery } from '@tanstack/react-query';
@@ -90,7 +89,7 @@ function SkeletonBlock({ className }: { className?: string }) {
 function NFTDetailModal({ booking, onClose, onViewBooking }: { booking: BookingRecord; onClose: () => void; onViewBooking: () => void }) {
   const body = getBody(booking.destinationId);
 
-  const { tokenURI, isLoading: uriLoading, isError: uriError } = useTokenURI(BigInt(booking.tokenId));
+  const { tokenURI, isLoading: uriLoading } = useTokenURI(BigInt(booking.tokenId));
 
   const resolvedURI = useMemo(() => {
     if (!tokenURI) return null;
@@ -110,7 +109,6 @@ function NFTDetailModal({ booking, onClose, onViewBooking }: { booking: BookingR
   });
 
   const onChainLoading = uriLoading || metaLoading;
-  const onChainFailed = uriError || (!uriLoading && !tokenURI) || metaError;
   const hasOnChain = !!metadata && !metaError;
 
   const metaImage = metadata?.image ? resolveIPFS(metadata.image) : null;
@@ -135,6 +133,7 @@ function NFTDetailModal({ booking, onClose, onViewBooking }: { booking: BookingR
           <div className='w-full max-w-[540px] mx-auto px-6 pt-6 sm:px-8 sm:pt-8'>
             {hasOnChain ? (
               metaImage ? (
+                // eslint-disable-next-line @next/next/no-img-element -- NFT artwork hosted on an arbitrary IPFS gateway
                 <img
                   src={metaImage}
                   alt={metadata?.name ?? `Token #${booking.tokenId}`}
@@ -295,7 +294,6 @@ function BookingHistoryView({ bookings, onSelect, onViewNft }: { bookings: Booki
 
 function BookingDetailModal({ booking, onClose, onViewNft }: { booking: BookingRecord; onClose: () => void; onViewNft: () => void }) {
   const body = getBody(booking.destinationId);
-  const route = getTravelRoute(booking.destinationId);
   return (
     <Modal open onClose={onClose}>
         <div className='px-6 pt-6 sm:px-8 sm:pt-8 space-y-5'>
@@ -401,7 +399,7 @@ export default function MyTicketsPage() {
   const { isConnected, address } = useConnection();
   const { mutate: connectWallet, connectors } = useConnect();
   const { data: backendBookings, isLoading: isBackendLoading, refetch: refetchBackend } = useBookingHistory(!!user);
-  const { onChainBookings, isLoading: isOnChainLoading, isError: isOnChainError, error: onChainError, refetch: refetchOnChain } = useOnChainBookings();
+  const { onChainBookings, isLoading: isOnChainLoading, isError: isOnChainError, error: onChainError } = useOnChainBookings();
   const [tab, setTab] = useState<Tab>('nft-gallery');
   const [selectedNft, setSelectedNft] = useState<BookingRecord | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
@@ -422,7 +420,9 @@ export default function MyTicketsPage() {
           destinationId: Number(ob.destinationId),
           pricePaid: formatEther(ob.pricePaid),
           createdAt: new Date(Number(ob.timestamp) * 1000).toISOString(),
-          _id: backendMatch?._id ?? `onchain-${ob.ticketId}`,
+          _id: backendMatch?._id
+            ? `${backendMatch._id}-onchain-${ob.ticketId}-${ob.timestamp}`
+            : `onchain-${ob.ticketId}-${ob.timestamp}`,
           userId: backendMatch?.userId ?? '',
           walletAddress: backendMatch?.walletAddress ?? address ?? '',
           transactionHash: backendMatch?.transactionHash ?? '',
@@ -463,9 +463,6 @@ export default function MyTicketsPage() {
     setTab('nft-gallery');
     setSelectedNft(b);
   };
-
-  // Allow showing content when wallet is connected, even if auth is pending
-  const showContent = !!user || isConnected;
 
   if (checkingSession) {
     return <LoadingScreen visible message='Checking session...' />;

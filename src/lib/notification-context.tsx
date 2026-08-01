@@ -49,6 +49,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, [user]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch that must run whenever the user changes
   useEffect(() => { fetchNotifs(); }, [fetchNotifs]);
 
   const unreadCount = notifications.filter(n => !n.read && !n.dismissed).length;

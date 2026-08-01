@@ -34,13 +34,13 @@ export default function PlanetRenderer({
 
       {/* Texture-specific rendering */}
       {textureType === 'rocky' && <RockyTextures cx={cx} cy={cy} r={r} s={s} baseColor={colors[1]} />}
-      {textureType === 'martian' && <MartianTextures cx={cx} cy={cy} r={r} s={s} spotColor={spotColor} />}
-      {textureType === 'gas-giant' && <GasGiantTextures cx={cx} cy={cy} r={r} s={s} bandColors={bandColors} spotColor={spotColor} clipId={clipId} />}
-      {textureType === 'ice-giant' && <IceGiantTextures cx={cx} cy={cy} r={r} s={s} bandColors={bandColors} spotColor={spotColor} clipId={clipId} />}
-      {textureType === 'icy' && <IcyTextures cx={cx} cy={cy} r={r} s={s} atmosphereColor={atmosphereColor} />}
+      {textureType === 'martian' && <MartianTextures cx={cx} cy={cy} r={r} s={s} />}
+      {textureType === 'gas-giant' && <GasGiantTextures cx={cx} cy={cy} r={r} bandColors={bandColors} spotColor={spotColor} clipId={clipId} />}
+      {textureType === 'ice-giant' && <IceGiantTextures cx={cx} cy={cy} r={r} bandColors={bandColors} spotColor={spotColor} clipId={clipId} />}
+      {textureType === 'icy' && <IcyTextures cx={cx} cy={cy} r={r} s={s} />}
       {textureType === 'volcanic' && <VolcanicTextures cx={cx} cy={cy} r={r} s={s} spotColor={spotColor} />}
-      {textureType === 'hazy' && <HazyTextures cx={cx} cy={cy} r={r} s={s} atmosphereColor={atmosphereColor} clipId={clipId} />}
-      {textureType === 'earth' && <EarthTextures cx={cx} cy={cy} r={r} s={s} atmosphereColor={atmosphereColor} clipId={clipId} />}
+      {textureType === 'hazy' && <HazyTextures cx={cx} cy={cy} r={r} atmosphereColor={atmosphereColor} clipId={clipId} />}
+      {textureType === 'earth' && <EarthTextures cx={cx} cy={cy} r={r} atmosphereColor={atmosphereColor} clipId={clipId} />}
       {textureType === 'cratered' && <CrateredTextures cx={cx} cy={cy} r={r} s={s} />}
 
       {/* Inner shadow for depth */}
@@ -88,7 +88,7 @@ function RockyTextures({ cx, cy, r, s }: { cx: number; cy: number; r: number; s:
   );
 }
 
-function MartianTextures({ cx, cy, r, s, spotColor }: { cx: number; cy: number; r: number; s: number; spotColor?: string }) {
+function MartianTextures({ cx, cy, r, s }: { cx: number; cy: number; r: number; s: number }) {
   return (
     <g>
       {/* North polar cap */}
@@ -112,8 +112,8 @@ function MartianTextures({ cx, cy, r, s, spotColor }: { cx: number; cy: number; 
   );
 }
 
-function GasGiantTextures({ cx, cy, r, s, bandColors, spotColor, clipId }: {
-  cx: number; cy: number; r: number; s: number;
+function GasGiantTextures({ cx, cy, r, bandColors, spotColor, clipId }: {
+  cx: number; cy: number; r: number;
   bandColors?: string[]; spotColor?: string; clipId: string;
 }) {
   const colors = bandColors ?? ['#fcd34d', '#f59e0b', '#d97706', '#92400e'];
@@ -154,8 +154,8 @@ function GasGiantTextures({ cx, cy, r, s, bandColors, spotColor, clipId }: {
   );
 }
 
-function IceGiantTextures({ cx, cy, r, s, bandColors, spotColor, clipId }: {
-  cx: number; cy: number; r: number; s: number;
+function IceGiantTextures({ cx, cy, r, bandColors, spotColor, clipId }: {
+  cx: number; cy: number; r: number;
   bandColors?: string[]; spotColor?: string; clipId: string;
 }) {
   const colors = bandColors ?? ['#a5f3fc', '#67e8f9', '#22d3ee'];
@@ -185,9 +185,8 @@ function IceGiantTextures({ cx, cy, r, s, bandColors, spotColor, clipId }: {
   );
 }
 
-function IcyTextures({ cx, cy, r, s, atmosphereColor }: {
+function IcyTextures({ cx, cy, r, s }: {
   cx: number; cy: number; r: number; s: number;
-  atmosphereColor?: string;
 }) {
   const crackPaths = [
     `M${cx - r * 0.5} ${cy - r * 0.2} L${cx - r * 0.3} ${cy - r * 0.1} L${cx - r * 0.1} ${cy - r * 0.3} L${cx + r * 0.2} ${cy - r * 0.15}`,
@@ -261,7 +260,7 @@ function VolcanicTextures({ cx, cy, r, s, spotColor }: {
           key={`sd${i}`}
           cx={cx + Math.sin(i * 31) * r * 0.6}
           cy={cy + Math.cos(i * 47) * r * 0.6}
-          r={3 + Math.random() * 5 * s}
+          r={3 + Math.abs(Math.sin(i * 97)) * 5 * s}
           fill='rgba(255,200,0,0.15)'
         />
       ))}
@@ -269,8 +268,8 @@ function VolcanicTextures({ cx, cy, r, s, spotColor }: {
   );
 }
 
-function HazyTextures({ cx, cy, r, s, atmosphereColor, clipId }: {
-  cx: number; cy: number; r: number; s: number;
+function HazyTextures({ cx, cy, r, atmosphereColor, clipId }: {
+  cx: number; cy: number; r: number;
   atmosphereColor?: string; clipId: string;
 }) {
   const hazeColor = atmosphereColor ?? '#fde68a';
@@ -307,8 +306,8 @@ function HazyTextures({ cx, cy, r, s, atmosphereColor, clipId }: {
   );
 }
 
-function EarthTextures({ cx, cy, r, s, atmosphereColor, clipId }: {
-  cx: number; cy: number; r: number; s: number;
+function EarthTextures({ cx, cy, r, atmosphereColor, clipId }: {
+  cx: number; cy: number; r: number;
   atmosphereColor?: string; clipId: string;
 }) {
   // Continents as irregular shapes

@@ -15,7 +15,7 @@ type LoadingScreenProps = {
 
 /* ─── Animated logo (compact, no overlay) ─── */
 export function LoadingSpinner({ size = 24, className = '', style }: LoadingSpinnerProps) {
-  const uid = `ls-${size}-${Math.random().toString(36).slice(2, 6)}`;
+  const uid = 'ls-spinner';
 
   return (
     <>
@@ -82,12 +82,8 @@ export default function LoadingScreen({ message, visible = true }: LoadingScreen
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (visible) {
-      const id = requestAnimationFrame(() => setShow(true));
-      return () => cancelAnimationFrame(id);
-    } else {
-      setShow(false);
-    }
+    const id = requestAnimationFrame(() => setShow(visible));
+    return () => cancelAnimationFrame(id);
   }, [visible]);
 
   if (!show) return null;

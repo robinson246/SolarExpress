@@ -18,14 +18,14 @@ export default function NFTTicket({
 }: NFTTicketProps) {
   const body = bodies.find(b => b.id === destinationId);
   const art = getNFTArtConfig(destinationId);
+  const uid = useId();
+
   if (!body || !art) return null;
 
   const displayW = compact ? 340 : 700;
   const displayH = compact ? 540 : 1100;
   const VW = 340;
   const VH = 540;
-
-  const uid = useId();
 
   return (
     <svg
