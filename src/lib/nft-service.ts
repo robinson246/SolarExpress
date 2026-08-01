@@ -5,7 +5,7 @@ export type GenerateMetadataResponse = {
   predictedTokenId: number;
 };
 
-const FETCH_TIMEOUT_MS = 45_000;
+const FETCH_TIMEOUT_MS = 90_000;
 
 export async function generateNFTMetadata(
   destinationId: number,
