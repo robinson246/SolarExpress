@@ -1,5 +1,5 @@
-export const TICKET_SALE_ADDRESS = (process.env.NEXT_PUBLIC_TICKET_SALE_ADDRESS || '0x9108a57EF02A3e9486E62C7cb4bcEb49D735e86f') as `0x${string}`;
-export const TICKET_NFT_ADDRESS = (process.env.NEXT_PUBLIC_TICKET_NFT_ADDRESS || '0xEe0fE93b4CC7017Eb9062b7B07ff00ECd92793d7') as `0x${string}`;
+export const TICKET_SALE_ADDRESS = (process.env.NEXT_PUBLIC_TICKET_SALE_ADDRESS || '0x80321d058C08cd4a4189543cE18387afAB2e91dC') as `0x${string}`;
+export const TICKET_NFT_ADDRESS = (process.env.NEXT_PUBLIC_TICKET_NFT_ADDRESS || '0x69090108D0AB2CdEdBC112e44D37E194c630cb1b') as `0x${string}`;
 export const BOOKING_HISTORY_ADDRESS = (process.env.NEXT_PUBLIC_BOOKING_HISTORY_ADDRESS || '0xC1D9a31Ef26b0f4E15C5366fD65C3116AB7AF5EF') as `0x${string}`;
 
 export const TICKET_SALE_ABI = [
@@ -17,6 +17,7 @@ export const TICKET_SALE_ABI = [
     stateMutability: 'payable',
     inputs: [
       { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+      { name: 'travelClass', type: 'uint8', internalType: 'enum TicketSale.TravelClass' },
       { name: 'metadataURI', type: 'string', internalType: 'string' },
     ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
@@ -25,7 +26,10 @@ export const TICKET_SALE_ABI = [
     type: 'function',
     name: 'destinationPrice',
     stateMutability: 'view',
-    inputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    inputs: [
+      { name: '', type: 'uint256', internalType: 'uint256' },
+      { name: '', type: 'uint8', internalType: 'enum TicketSale.TravelClass' },
+    ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
   },
   {
@@ -48,6 +52,7 @@ export const TICKET_SALE_ABI = [
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'destinationId', type: 'uint256', internalType: 'uint256' },
+      { name: 'travelClass', type: 'uint8', internalType: 'enum TicketSale.TravelClass' },
       { name: 'priceWei', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [],
@@ -57,6 +62,7 @@ export const TICKET_SALE_ABI = [
     name: 'setDestinationPrices',
     stateMutability: 'nonpayable',
     inputs: [
+      { name: 'travelClass', type: 'uint8', internalType: 'enum TicketSale.TravelClass' },
       { name: 'destinationIds', type: 'uint256[]', internalType: 'uint256[]' },
       { name: 'pricesWei', type: 'uint256[]', internalType: 'uint256[]' },
     ],
@@ -301,6 +307,16 @@ export const TICKET_NFT_ABI = [
     name: 'setSaleContract',
     stateMutability: 'nonpayable',
     inputs: [{ name: '_saleContract', type: 'address', internalType: 'address' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'setTokenURI',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
+      { name: 'metadataURI', type: 'string', internalType: 'string' },
+    ],
     outputs: [],
   },
   {

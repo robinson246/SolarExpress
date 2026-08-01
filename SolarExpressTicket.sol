@@ -56,6 +56,14 @@ contract SolarExpressTicket is ERC721, ERC721URIStorage, Ownable {
         return tokenId;
     }
 
+    /// @notice Update the metadata URI of an existing ticket (e.g. to fix a broken image).
+    /// @param tokenId The ticket token ID to update.
+    /// @param metadataURI New metadata URI (e.g. a Pinata gateway URL).
+    function setTokenURI(uint256 tokenId, string memory metadataURI) external onlyOwner {
+        _setTokenURI(tokenId, metadataURI);
+        emit MetadataUpdate(tokenId);
+    }
+
     // --- Required overrides for ERC721URIStorage ---
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { TICKET_SALE_ADDRESS, TICKET_NFT_ADDRESS, BOOKING_HISTORY_ADDRESS } from '@/lib/contract';
 import NavBar from '@/components/layout/NavBar';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
@@ -14,9 +15,9 @@ const TECH_STACK = [
 ];
 
 const CONTRACTS = [
-  { name: 'TicketSale', address: process.env.NEXT_PUBLIC_TICKET_SALE_ADDRESS || '0x9108a57EF02A3e9486E62C7cb4bcEb49D735e86f' as const },
-  { name: 'TicketNFT (ERC-721)', address: process.env.NEXT_PUBLIC_TICKET_NFT_ADDRESS || '0xEe0fE93b4CC7017Eb9062b7B07ff00ECd92793d7' as const },
-  { name: 'BookingHistory', address: process.env.NEXT_PUBLIC_BOOKING_HISTORY_ADDRESS || '0xC1D9a31Ef26b0f4E15C5366fD65C3116AB7AF5EF' as const },
+  { name: 'TicketSale', address: TICKET_SALE_ADDRESS },
+  { name: 'TicketNFT (ERC-721)', address: TICKET_NFT_ADDRESS },
+  { name: 'BookingHistory', address: BOOKING_HISTORY_ADDRESS },
 ];
 
 export default function AboutPage() {
