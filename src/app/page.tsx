@@ -1,11 +1,11 @@
 ﻿'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useMobile } from '@/lib/useMobile';
 import PlanetMenu from '@/components/menu/PlanetMenu';
-import SolarSystem from '@/components/scene/SolarSystem';
 import DestinationPanel from '@/components/panel/DestinationPanel';
 import RoutePanel from '@/components/panel/RoutePanel';
 import MobileExploreView from '@/components/panel/MobileExploreView';
@@ -14,8 +14,17 @@ import { getTravelRoute } from '@/data/travel';
 import NavBar from '@/components/layout/NavBar';
 import BookTicketButton from '@/components/panel/BookTicketButton';
 import SolarExpressLogo from '@/components/ui/SolarExpressLogo';
-import LoadingScreen from '@/components/ui/LoadingScreen';
+import { LoadingSpinner, default as LoadingScreen } from '@/components/ui/LoadingScreen';
 import Link from 'next/link';
+
+const SolarSystem = dynamic(() => import('@/components/scene/SolarSystem'), {
+  ssr: false,
+  loading: () => (
+    <div className='w-full h-full flex items-center justify-center bg-[#09090b]'>
+      <LoadingSpinner size={48} />
+    </div>
+  ),
+});
 
 export default function Home() {
   const router = useRouter();

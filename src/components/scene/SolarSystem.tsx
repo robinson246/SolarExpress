@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -194,7 +194,7 @@ function TimeTracker({ timeRef }: { timeRef: React.RefObject<number> }) {
 }
 
 export default function SolarSystem({ bodies, focusedPlanetId, selectedMoonId, isFocused, onPlanetSelect }: SolarSystemProps) {
-  const planets = bodies.filter(body => body.type === 'planet');
+  const planets = useMemo(() => bodies.filter(body => body.type === 'planet'), [bodies]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const controlsRef = useRef<any>(null);
   const timeRef = useRef(0);
