@@ -27,7 +27,12 @@ const RPC_URLS = [
   'https://sepolia.gateway.tenderly.co',
 ].filter(Boolean);
 
-const TICKET_SALE_ADDRESS = '0x9108a57EF02A3e9486E62C7cb4bcEb49D735e86f';
+// The live TicketSale contract. Override with TICKET_SALE_ADDRESS or
+// NEXT_PUBLIC_TICKET_SALE_ADDRESS if it changes.
+const TICKET_SALE_ADDRESS =
+  process.env.TICKET_SALE_ADDRESS ||
+  process.env.NEXT_PUBLIC_TICKET_SALE_ADDRESS ||
+  '0x80321d058C08cd4a4189543cE18387afAB2e91dC';
 
 if (!MONGO_URI) {
   console.error('MONGODB_URI not set. Create a .env file in backend/.');
