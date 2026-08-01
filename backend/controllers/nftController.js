@@ -1,4 +1,4 @@
-const { uploadSvgToPinata, uploadJSONToPinata, ipfsUri } = require('../services/pinataService');
+const { uploadTicketImageToPinata, uploadJSONToPinata, gatewayUrl, ipfsUri } = require('../services/pinataService');
 
 async function uploadTicket(req, res) {
   try {
@@ -8,12 +8,12 @@ async function uploadTicket(req, res) {
       return res.status(400).json({ error: 'svgString is required' });
     }
 
-    const imageCid = await uploadSvgToPinata(svgString, name || 'solarexpress-ticket');
+    const imageCid = await uploadTicketImageToPinata(svgString, name || 'solarexpress-ticket');
 
     const metadata = {
       name: name || 'SolarExpress Ticket',
       description: description || 'Official SolarExpress Interplanetary Boarding Pass.',
-      image: ipfsUri(imageCid),
+      image: gatewayUrl(imageCid),
       external_url: externalUrl || 'https://solarexpress.app',
     };
 

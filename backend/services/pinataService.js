@@ -1,3 +1,4 @@
+const sharp = require('sharp');
 const PINATA_JWT = process.env.PINATA_JWT;
 const PINATA_API = 'https://api.pinata.cloud';
 const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud';
@@ -8,13 +9,15 @@ function requireAuth() {
   }
 }
 
-async function uploadSvgToPinata(svgString, name) {
+async function uploadTicketImageToPinata(svgString, name) {
   requireAuth();
 
   const safeName = name.replace(/[^a-zA-Z0-9]/g, '_');
-  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const pngBuffer = await sharp(Buffer.from(svgString), { density: 144 }).png().toBuffer();
+
+  const blob = new Blob([pngBuffer], { type: 'image/png' });
   const formData = new FormData();
-  formData.append('file', blob, `${safeName}.svg`);
+  formData.append('file', blob, `${safeName}.png`);
 
   const res = await fetch(`${PINATA_API}/pinning/pinFileToIPFS`, {
     method: 'POST',
@@ -24,7 +27,7 @@ async function uploadSvgToPinata(svgString, name) {
 
   if (!res.ok) {
     const errBody = await res.text();
-    throw new Error(`Pinata SVG upload failed (${res.status}): ${errBody}`);
+    throw new Error(`Pinata PNG upload failed (${res.status}): ${errBody}`);
   }
 
   const data = await res.json();
@@ -60,4 +63,4 @@ function gatewayUrl(cid) {
   return `${IPFS_GATEWAY}/ipfs/${cid}`;
 }
 
-module.exports = { uploadSvgToPinata, uploadJSONToPinata, ipfsUri, gatewayUrl };
+module.exports = { uploadTicketImageToPinata, uploadJSONToPinata, ipfsUri, gatewayUrl };
