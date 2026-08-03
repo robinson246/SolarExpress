@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useState, useCallback, type ReactNode } from 'react';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 
 type LoadingContextType = {
@@ -32,6 +32,4 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAppLoading() {
-  return useContext(LoadingContext);
-}
+

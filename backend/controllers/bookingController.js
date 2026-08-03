@@ -25,6 +25,13 @@ async function createBooking(req, res) {
     // Generate fallback flight details for any missing fields
     const fallback = generateFlightDetails(destinationId, { departureDate, travelClass });
 
+    // Normalize travel class so a capitalized/mismatched value can't fail the enum validation
+    const normalizeTravelClass = (value, fallbackValue) => {
+      if (!value) return fallbackValue;
+      const normalized = String(value).toLowerCase();
+      return ['economy', 'business', 'first'].includes(normalized) ? normalized : fallbackValue;
+    };
+
     const booking = await Booking.create({
       userId,
       walletAddress: walletAddress.toLowerCase(),
@@ -35,7 +42,7 @@ async function createBooking(req, res) {
       bookingReference: bookingReference || fallback.bookingReference,
       departureDate: departureDate || fallback.departureDate,
       departureTime: departureTime || fallback.departureTime,
-      travelClass: travelClass || fallback.passengerClass,
+      travelClass: normalizeTravelClass(travelClass, fallback.passengerClass),
       seatNumber: seatNumber || fallback.seatNumber,
       availabilityStatus: availabilityStatus || 'confirmed',
       availabilityCheckedAt: availabilityCheckedAt || undefined,

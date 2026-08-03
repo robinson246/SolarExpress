@@ -18,7 +18,7 @@ const RPC_TIMEOUT_MS = 5_000;
 const RECENT_BLOCK_WINDOW = 60_000n;
 const CHUNK_SIZE = 30_000n;
 
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {

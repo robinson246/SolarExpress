@@ -426,7 +426,7 @@ export default function MyTicketsPage() {
           userId: backendMatch?.userId ?? '',
           walletAddress: backendMatch?.walletAddress ?? address ?? '',
           transactionHash: backendMatch?.transactionHash ?? '',
-          status: backendMatch?.status ?? 'confirmed',
+          status: backendMatch?.status ?? 'Confirmed',
           updatedAt: backendMatch?.updatedAt ?? new Date(Number(ob.timestamp) * 1000).toISOString(),
           bookingReference: backendMatch?.bookingReference,
           departureDate: backendMatch?.departureDate,

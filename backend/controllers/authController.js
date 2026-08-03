@@ -29,8 +29,8 @@ async function generateOnboardingNotifications(userId) {
     });
   }
 
-  // Active promotion — only if not already dismissed
-  const activePromo = await Notification.findOne({ userId, type: 'promotion', dismissed: false });
+  // Active promotion — only once per user (even if dismissed)
+  const activePromo = await Notification.findOne({ userId, type: 'promotion' });
   if (!activePromo) {
     await Notification.create({
       userId,

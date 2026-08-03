@@ -13,6 +13,8 @@ const ITEMS = [
 export default function MobileBottomNav() {
   const pathname = usePathname();
 
+  if (pathname === '/signin') return null;
+
   return (
     <nav className='sm:hidden fixed bottom-0 left-0 right-0 h-14 bg-[#09090b]/95 backdrop-blur-md border-t border-[rgba(167,139,250,0.12)] flex items-center justify-around z-50'>
       {ITEMS.map((item) => {

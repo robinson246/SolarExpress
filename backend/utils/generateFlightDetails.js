@@ -46,7 +46,7 @@ function generateFlightDetails(destinationId, overrides = {}) {
     departureTime,
     launchTerminal,
     seatNumber,
-    passengerClass: overrides.passengerClass || 'Economy',
+    passengerClass: overrides.passengerClass || 'economy',
   };
 }
 

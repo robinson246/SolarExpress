@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { setAuthToken } from './api';
 
 interface AuthUser {
-  id: number;
+  id: string;
   email: string;
   walletAddress: string | null;
 }

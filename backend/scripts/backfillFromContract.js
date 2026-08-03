@@ -89,6 +89,16 @@ async function main() {
   let skipped = 0;
   let noUser = 0;
 
+  // Cache block timestamps so we don't re-fetch per log
+  const blockTsCache = new Map();
+  async function getBlockTimestamp(blockNumber) {
+    if (!blockTsCache.has(blockNumber)) {
+      const block = await publicClient.getBlock({ blockNumber });
+      blockTsCache.set(blockNumber, Number(block.timestamp) * 1000);
+    }
+    return blockTsCache.get(blockNumber);
+  }
+
   for (const log of logs) {
     const { tokenId, buyer, destinationId, pricePaid } = log.args;
     const txHash = log.transactionHash.toLowerCase();
@@ -108,6 +118,7 @@ async function main() {
 
     const destId = Number(destinationId);
     const fields = generateFlightDetails(destId);
+    const purchasedAt = await getBlockTimestamp(log.blockNumber);
 
     const booking = {
       userId: user._id,
@@ -125,7 +136,7 @@ async function main() {
       availabilityStatus: 'confirmed',
       flightNumber: fields.flightNumber,
       launchTerminal: fields.launchTerminal,
-      createdAt: new Date(Number(log.blockNumber) * 1000),
+      createdAt: new Date(purchasedAt),
       updatedAt: new Date(),
     };
 

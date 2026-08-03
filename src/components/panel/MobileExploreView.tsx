@@ -8,7 +8,7 @@ interface MobileExploreViewProps {
   onSelectBody: (id: number) => void;
 }
 
-const PLANET_ORDER = [1, 2, 3, 5, 8, 13, 16, 18];
+const PLANET_ORDER = [1, 2, 3, 5, 8, 13, 16, 18, 20];
 
 export default function MobileExploreView({ selectedBodyId, onSelectBody }: MobileExploreViewProps) {
   const [expandedPlanet, setExpandedPlanet] = useState<number | null>(null);

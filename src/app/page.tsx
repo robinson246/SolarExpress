@@ -177,7 +177,7 @@ export default function Home() {
             )}
 
             {/* Bottom sheet */}
-            <div className={`sm:hidden fixed inset-x-0 bottom-0 z-30 transition-transform duration-300 ${panelOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+            <div className={`sm:hidden fixed inset-x-0 bottom-14 z-30 transition-transform duration-300 ${panelOpen ? 'translate-y-0' : 'translate-y-full'}`}>
               <div className='absolute inset-0 bg-black/40' onClick={() => setPanelOpen(false)} />
               <div className='relative max-h-[70vh] bg-gray-900/98 border-t border-gray-700/60 rounded-t-2xl shadow-2xl flex flex-col'>
                 {/* Drag handle */}
