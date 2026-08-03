@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 const PINATA_JWT = process.env.PINATA_JWT;
 const PINATA_API = 'https://api.pinata.cloud';
-const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud';
+const IPFS_GATEWAY = process.env.IPFS_GATEWAY || 'https://ipfs.io';
 
 function requireAuth() {
   if (!PINATA_JWT) {

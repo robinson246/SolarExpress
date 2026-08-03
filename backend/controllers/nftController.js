@@ -28,7 +28,7 @@ async function uploadTicket(req, res) {
       imageCid,
       metadataCid,
       metadataUri: ipfsUri(metadataCid),
-      imageUrl: `https://gateway.pinata.cloud/ipfs/${imageCid}`,
+      imageUrl: gatewayUrl(imageCid),
     });
   } catch (err) {
     console.error('[NFT Controller] Upload failed:', err);
