@@ -13,7 +13,7 @@ async function uploadTicket(req, res) {
     const metadata = {
       name: name || 'SolarExpress Ticket',
       description: description || 'Official SolarExpress Interplanetary Boarding Pass.',
-      image: gatewayUrl(imageCid),
+      image: ipfsUri(imageCid),
       external_url: externalUrl || 'https://solarexpress.app',
     };
 

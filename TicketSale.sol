@@ -7,8 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 interface ISolarExpressTicket {
     function mintTicket(
         address to,
-        uint256 destinationId,
-        string memory metadataURI
+        uint256 destinationId
     ) external returns (uint256);
 }
 
@@ -65,14 +64,13 @@ contract TicketSale is Ownable {
     /// @notice Buy a ticket: pay exact ETH price, mint the NFT, record history.
     function buyTicket(
         uint256 destinationId,
-        TravelClass travelClass,
-        string memory metadataURI
+        TravelClass travelClass
     ) external payable returns (uint256) {
         uint256 price = destinationPrice[destinationId][travelClass];
         require(price > 0, "Destination/class not available");
         require(msg.value == price, "Incorrect ETH amount");
 
-        uint256 tokenId = ticketContract.mintTicket(msg.sender, destinationId, metadataURI);
+        uint256 tokenId = ticketContract.mintTicket(msg.sender, destinationId);
 
         bookingHistory.recordBooking(msg.sender, tokenId, destinationId, msg.value);
 

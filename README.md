@@ -170,7 +170,7 @@ npm run dev
 | `NEXT_PUBLIC_TICKET_NFT_ADDRESS` | Deployed TicketNFT (ERC-721) contract address |
 | `NEXT_PUBLIC_BOOKING_HISTORY_ADDRESS` | Deployed BookingHistory contract address |
 | `NEXT_PUBLIC_SEPOLIA_RPC_URL` | Sepolia RPC endpoint |
-| `API_BACKEND_URL` | Backend API URL (for Next.js proxy rewrites) |
+| `API_BACKEND_URL` | Backend API URL used by frontend requests, API routes, and rewrites |
 
 ### Backend (`.env`)
 

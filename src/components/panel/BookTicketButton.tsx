@@ -8,7 +8,6 @@ import { setIsModalOpen } from '@/lib/modal-store';
 import { useBuyTicket } from '@/hooks/useBuyTicket';
 import { useSyncBooking } from '@/hooks/useSyncBooking';
 import { useQueryClient } from '@tanstack/react-query';
-import { generateNFTMetadata } from '@/lib/nft-service';
 import { bodies } from '@/data/bodies';
 import { getTravelRoute, generateFlightDetails, getClassPriceEth, PASSENGER_CLASSES, type FlightDetails } from '@/data/travel';
 import NFTTicket from '@/components/nft/NFTTicket';
@@ -104,8 +103,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
   const [travelClass, setTravelClass] = useState('economy');
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [dbStatus, setDbStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-  const [metadataError, setMetadataError] = useState<string | null>(null);
-  const [metadataGenerating, setMetadataGenerating] = useState(false);
   const triggeredRef = useRef(false);
 
   const body = selectedBodyId ? bodies.find(b => b.id === selectedBodyId) ?? null : null;
@@ -140,8 +137,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
     setTravelClass('economy');
     setAgreementAccepted(false);
     setDbStatus('idle');
-    setMetadataError(null);
-    setMetadataGenerating(false);
     triggeredRef.current = false;
     setFlightDetails(generateFlightDetails(body.id));
   };
@@ -151,8 +146,6 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
     setIsModalOpen(false);
     resetTx();
     setDbStatus('idle');
-    setMetadataError(null);
-    setMetadataGenerating(false);
     triggeredRef.current = false;
   };
 
@@ -558,27 +551,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
               {/* ─── Step 8: Payment / Blockchain Flow ─── */}
               {wizardStep === 'payment' && (
                 <div className='space-y-4'>
-                  {(metadataGenerating || metadataError) && txStep === 'idle' && (
-                    metadataError ? (
-                      <div className='bg-red-900/20 border border-red-700/30 rounded-xl p-4 space-y-3'>
-                        <p className='text-sm font-medium text-red-300'>Metadata Generation Failed</p>
-                        <p className='text-xs text-red-200/70'>{metadataError}</p>
-                        <button
-                          onClick={() => { setWizardStep('review'); setMetadataGenerating(false); setMetadataError(null); }}
-                          className='text-xs text-gray-400 hover:text-white underline underline-offset-2 cursor-pointer'
-                        >
-                          Back to review
-                        </button>
-                      </div>
-                    ) : (
-                      <div className='bg-violet-900/20 border border-violet-700/30 rounded-xl p-4 text-center space-y-3'>
-                        <LoadingSpinner size={32} className='mx-auto' />
-                        <p className='text-sm text-violet-300'>Generating NFT Artwork...</p>
-                        <p className='text-[11px] text-violet-200/60'>Creating ticket image and uploading to IPFS.</p>
-                      </div>
-                    )
-                  )}
-                  {txStep === 'preparing' && !metadataGenerating && !metadataError && (
+                  {txStep === 'preparing' && (
                     <div className='bg-violet-900/20 border border-violet-700/30 rounded-xl p-4 text-center space-y-3'>
                       <LoadingSpinner size={32} className='mx-auto' />
                       <p className='text-sm text-violet-300'>Preparing Transaction...</p>
@@ -628,7 +601,7 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                       </button>
                     </div>
                   )}
-                  {txStep === 'idle' && !metadataGenerating && !metadataError && !writeError && (
+                  {txStep === 'idle' && !writeError && (
                     <div className='bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 space-y-3 text-center'>
                       <p className='text-sm text-gray-300'>Nothing to process.</p>
                       <button onClick={() => setWizardStep('review')} className='text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2 cursor-pointer'>
@@ -745,20 +718,9 @@ export default function BookTicketButton({ selectedBodyId }: BookTicketButtonPro
                   else if (wizardStep === 'passenger-class') goToStep('agreement');
                   else if (wizardStep === 'agreement') { if (canProceedFromAgreement) goToStep('review'); }
                   else if (wizardStep === 'review') {
-                    if (isConnected && body && !metadataGenerating) {
+                    if (isConnected && body) {
                       setWizardStep('payment');
-                      setMetadataGenerating(true);
-                      setMetadataError(null);
-                      generateNFTMetadata(body.id, ticketPriceEth, address, travelClass)
-                        .then((result) => {
-                          setMetadataGenerating(false);
-                          buyTicket(body.id, ticketPriceEth, result.metadataUri, travelClass);
-                        })
-                        .catch((err) => {
-                          console.error('[metadata] generation failed:', err);
-                          setMetadataError(err instanceof Error ? err.message : 'Failed to generate NFT metadata');
-                          setMetadataGenerating(false);
-                        });
+                      buyTicket(body.id, ticketPriceEth, travelClass);
                     }
                   }
                 }}

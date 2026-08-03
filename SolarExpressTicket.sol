@@ -5,12 +5,14 @@ pragma solidity ^0.8.27;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @notice Pure NFT contract for SolarExpress tickets.
 /// Holds no pricing/payment logic -- that lives in TicketSale.sol.
 /// Only the approved TicketSale contract (or the owner, for setup) can mint.
 contract SolarExpressTicket is ERC721, ERC721URIStorage, Ownable {
     uint256 private _nextTokenId;
+    string public baseTokenURI = "https://solarexpress.app/api/nft/metadata/";
 
     // The one contract allowed to call mintTicket (set after both are deployed)
     address public saleContract;
@@ -38,14 +40,17 @@ contract SolarExpressTicket is ERC721, ERC721URIStorage, Ownable {
     }
 
     /// @notice Mint a new ticket NFT. Only callable by the approved sale contract.
+    function setBaseTokenURI(string memory _baseTokenURI) external onlyOwner {
+        baseTokenURI = _baseTokenURI;
+    }
+
     function mintTicket(
         address to,
-        uint256 destinationId,
-        string memory metadataURI
+        uint256 destinationId
     ) external onlySaleContract returns (uint256) {
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, metadataURI);
+        _setTokenURI(tokenId, string.concat(baseTokenURI, Strings.toString(tokenId)));
 
         tickets[tokenId] = TicketData({
             destinationId: destinationId,

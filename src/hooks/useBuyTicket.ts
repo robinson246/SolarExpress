@@ -115,7 +115,6 @@ export function useBuyTicket() {
   async function buyTicket(
     destinationId: number,
     priceEth: string,
-    metadataURI = '',
     travelClass = 'economy',
   ): Promise<BuyTicketResult | null> {
     try {
@@ -131,7 +130,7 @@ export function useBuyTicket() {
         address: TICKET_SALE_ADDRESS,
         abi: TICKET_SALE_ABI,
         functionName: 'buyTicket',
-        args: [BigInt(destinationId), classId, metadataURI],
+        args: [BigInt(destinationId), classId],
         value: parseEther(priceEth),
         gas: 500_000n,
       });

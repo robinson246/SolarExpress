@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { setAuthToken } from './api';
+import { getApiBaseUrl } from './backend-url';
 
 interface AuthUser {
   id: string;
@@ -23,7 +24,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth`;
+const API_BASE = getApiBaseUrl('/api/auth');
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
