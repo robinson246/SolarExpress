@@ -3,14 +3,14 @@
 // Expects these environment variables (set as GitHub secrets in workflow):
 // NFT_ADDRESS, SALE_ADDRESS, BASE_TOKEN_URI, SEPOLIA_RPC_URL, PRIVATE_KEY
 
-const { createPublicClient, createWalletClient, http } = require('viem');
+const { createPublicClient, createWalletClient, http, parseAbi } = require('viem');
 const { sepolia } = require('viem/chains');
 const { privateKeyToAccount } = require('viem/accounts');
 
-const abi = [
-  'function setSaleContract(address _saleContract) external',
-  'function setBaseTokenURI(string _baseTokenURI) external'
-];
+const abi = parseAbi([
+  'function setSaleContract(address _saleContract)',
+  'function setBaseTokenURI(string _baseTokenURI)'
+]);
 
 function normalizePrivateKey(key) {
   let k = key.trim();
