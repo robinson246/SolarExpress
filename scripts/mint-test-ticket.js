@@ -13,6 +13,12 @@ const { privateKeyToAccount } = require('viem/accounts');
 const saleAbi = parseAbi([
   'function setDestinationPrices(uint8 travelClass, uint256[] destinationIds, uint256[] pricesWei)',
   'function buyTicket(uint256 destinationId, uint8 travelClass) payable returns (uint256)',
+  'function bookingHistory() view returns (address)',
+]);
+
+const bookingHistoryAbi = parseAbi([
+  'function saleContract() view returns (address)',
+  'function setSaleContract(address _saleContract)',
 ]);
 
 // destinationId => economy priceEth (must match src/data/bodies.ts)
@@ -102,6 +108,27 @@ async function main() {
   console.log('business prices set');
 
   const price = economyWei[ids.indexOf(destinationId)];
+
+  // Make sure BookingHistory is wired to this sale contract before buying.
+  const bookingHistoryAddr = await publicClient.readContract({
+    address: sale, abi: saleAbi, functionName: 'bookingHistory',
+  });
+  const currentBHSale = await publicClient.readContract({
+    address: bookingHistoryAddr, abi: bookingHistoryAbi, functionName: 'saleContract',
+  }).catch(() => null);
+  if (currentBHSale !== sale.toLowerCase()) {
+    console.log('Wiring BookingHistory', bookingHistoryAddr, 'to sale contract...');
+    const txW = await walletClient.writeContract({
+      address: bookingHistoryAddr, abi: bookingHistoryAbi, functionName: 'setSaleContract',
+      args: [sale],
+    });
+    console.log('tx sent:', txW);
+    await waitForMined(publicClient, txW);
+    console.log('BookingHistory wired');
+  } else {
+    console.log('BookingHistory already wired to sale contract');
+  }
+
   console.log(`Buying economy ticket for destination ${destinationId} (${PRICES[destinationId]} ETH)...`);
   const tx3 = await walletClient.writeContract({
     address: sale, abi: saleAbi, functionName: 'buyTicket',
