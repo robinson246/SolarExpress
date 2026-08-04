@@ -82,8 +82,8 @@ async function main() {
   }
 
   const account = privateKeyToAccount(key);
-  const publicClient = createPublicClient({ chain: sepolia, transport: fallback(RPC_URLS.map(u => http(u)), { rank: true }) });
-  const walletClient = createWalletClient({ account, chain: sepolia, transport: fallback(RPC_URLS.map(u => http(u)), { rank: true }) });
+  const publicClient = createPublicClient({ chain: sepolia, transport: fallback(RPC_URLS.map(u => http(u, { timeout: 10000 })), { rank: true }) });
+  const walletClient = createWalletClient({ account, chain: sepolia, transport: fallback(RPC_URLS.map(u => http(u, { timeout: 10000 })), { rank: true }) });
 
   const ids = Object.keys(PRICES).map(Number);
   const economyWei = ids.map(id => parseEther(PRICES[id]));

@@ -32,7 +32,7 @@ const RPC_URLS = [
 const TICKET_SALE_ADDRESS =
   process.env.TICKET_SALE_ADDRESS ||
   process.env.NEXT_PUBLIC_TICKET_SALE_ADDRESS ||
-  '0x80321d058C08cd4a4189543cE18387afAB2e91dC';
+  '0xA3E410c1A85Ae21774a6aF2D54a818BaedF19eCE';
 
 if (!MONGO_URI) {
   console.error('MONGODB_URI not set. Create a .env file in backend/.');

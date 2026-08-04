@@ -232,6 +232,3 @@ Update `.env.local` with the deployed addresses after deployment.
 - Unit and integration tests (Jest + Playwright)
 - CI/CD pipeline (GitHub Actions)
 
-## License
-
-MIT — see [LICENSE](LICENSE) for details.

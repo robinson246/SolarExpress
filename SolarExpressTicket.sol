@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 // Compatible with OpenZeppelin Contracts ^5.4.0
 pragma solidity ^0.8.27;
 
@@ -11,7 +11,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 /// Holds no pricing/payment logic -- that lives in TicketSale.sol.
 /// Only the approved TicketSale contract (or the owner, for setup) can mint.
 contract SolarExpressTicket is ERC721, ERC721URIStorage, Ownable {
-    uint256 private _nextTokenId;
+    uint256 private _nextTokenId = 1;
     string public baseTokenURI = "https://solarexpress.app/api/nft/metadata/";
 
     // The one contract allowed to call mintTicket (set after both are deployed)

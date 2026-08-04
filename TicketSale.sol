@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 // Compatible with OpenZeppelin Contracts ^5.4.0
 pragma solidity ^0.8.27;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 interface ISolarExpressTicket {
     function mintTicket(
@@ -23,7 +24,7 @@ interface IBookingHistory {
 /// @notice Handles pricing and ETH payment for SolarExpress tickets, mints
 /// the NFT via SolarExpressTicket, then records the trip in BookingHistory.
 /// This is the one contract that ties all three pieces together.
-contract TicketSale is Ownable {
+contract TicketSale is Ownable, ReentrancyGuard {
     enum TravelClass { Economy, Business, First }
 
     ISolarExpressTicket public immutable ticketContract;
@@ -65,7 +66,7 @@ contract TicketSale is Ownable {
     function buyTicket(
         uint256 destinationId,
         TravelClass travelClass
-    ) external payable returns (uint256) {
+    ) external payable nonReentrant returns (uint256) {
         uint256 price = destinationPrice[destinationId][travelClass];
         require(price > 0, "Destination/class not available");
         require(msg.value == price, "Incorrect ETH amount");
