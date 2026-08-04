@@ -1,0 +1,28 @@
+name: Mint Test Ticket
+
+on:
+  workflow_dispatch:
+    inputs:
+      destination_id:
+        description: 'Destination ID to mint (default 5 = Mars)'
+        required: false
+        default: '5'
+
+jobs:
+  mint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm ci
+      - name: Mint test ticket
+        env:
+          SALE_ADDRESS: ${{ secrets.SALE_ADDRESS }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          TEST_DESTINATION_ID: ${{ github.event.inputs.destination_id }}
+        run: node scripts/mint-test-ticket.js
