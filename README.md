@@ -220,6 +220,18 @@ npx hardhat run scripts/deploy.js --network sepolia
 
 Update `.env.local` with the deployed addresses after deployment.
 
+## NFT Metadata Endpoint
+
+Tickets store `tokenURI` as `{BASE_TOKEN_URI}/{tokenId}` and the metadata is
+generated on-demand by the frontend API route at `/api/nft/metadata/[tokenId]`.
+The route reads the ticket data from the `SolarExpressTicket` contract and the
+`TicketPurchased` event from `TicketSale`, then returns an ERC-721 metadata JSON
+with an embedded SVG image. Because it is a Next.js API route, the deployed
+frontend must be able to serve `/api/*` (e.g. Vercel) — a static host such as an
+S3 bucket will not work. After deployment, set `baseTokenURI` on the NFT
+contract (e.g. via `scripts/wire-with-viem.js`) to the frontend's URL ending in
+`/api/nft/metadata/`.
+
 ## Future Improvements
 
 - Multi-network support (Ethereum mainnet, Polygon, Arbitrum)
