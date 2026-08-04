@@ -21,4 +21,4 @@ jobs:
           BASE_TOKEN_URI: ${{ secrets.BASE_TOKEN_URI }}
           SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-        run: node scripts/wire-with-ethers.js
+        run: node scripts/wire-with-viem.js
