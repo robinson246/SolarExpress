@@ -1,0 +1,24 @@
+name: Wire Contracts
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm ci
+      - name: Wire contracts
+        env:
+          NFT_ADDRESS: ${{ secrets.NFT_ADDRESS }}
+          SALE_ADDRESS: ${{ secrets.SALE_ADDRESS }}
+          BASE_TOKEN_URI: ${{ secrets.BASE_TOKEN_URI }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: node scripts/wire-with-ethers.js
