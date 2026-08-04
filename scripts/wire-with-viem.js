@@ -12,12 +12,18 @@ const abi = [
   'function setBaseTokenURI(string _baseTokenURI) external'
 ];
 
+function normalizePrivateKey(key) {
+  let k = key.trim();
+  if (!k.startsWith('0x')) k = '0x' + k;
+  return k;
+}
+
 async function main() {
-  const nft = process.env.NFT_ADDRESS;
-  const sale = process.env.SALE_ADDRESS;
-  const base = process.env.BASE_TOKEN_URI;
-  const rpc = process.env.SEPOLIA_RPC_URL;
-  const key = process.env.PRIVATE_KEY;
+  const nft = (process.env.NFT_ADDRESS || '').trim();
+  const sale = (process.env.SALE_ADDRESS || '').trim();
+  const base = (process.env.BASE_TOKEN_URI || '').trim();
+  const rpc = (process.env.SEPOLIA_RPC_URL || '').trim();
+  const key = normalizePrivateKey(process.env.PRIVATE_KEY || '');
 
   if (!nft || !sale || !base || !rpc || !key) {
     console.error('Missing required env vars. Required: NFT_ADDRESS, SALE_ADDRESS, BASE_TOKEN_URI, SEPOLIA_RPC_URL, PRIVATE_KEY');
