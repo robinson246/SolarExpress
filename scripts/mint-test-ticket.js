@@ -36,6 +36,29 @@ function normalizePrivateKey(key) {
   return k;
 }
 
+async function waitForMined(publicClient, hash, timeoutMs = 180000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const receipt = await publicClient.getTransactionReceipt({ hash });
+      if (receipt && receipt.status === 'success') {
+        return receipt;
+      }
+      if (receipt && receipt.status === 'reverted') {
+        throw new Error(`Transaction ${hash} reverted`);
+      }
+    } catch (err) {
+      if (err && err.shortMessage && err.shortMessage.includes('could not be found')) {
+        // not mined yet, keep polling
+      } else if (!err || !err.shortMessage || !/rate limit|too many|429|unavailable/i.test(err.shortMessage + (err.message || ''))) {
+        throw err;
+      }
+    }
+    await new Promise(r => setTimeout(r, 5000));
+  }
+  throw new Error(`Timed out waiting for transaction ${hash} to be mined`);
+}
+
 async function main() {
   const sale = (process.env.SALE_ADDRESS || '').trim();
   const rpc = (process.env.SEPOLIA_RPC_URL || '').trim();
@@ -66,7 +89,7 @@ async function main() {
     args: [0, ids, economyWei],
   });
   console.log('tx sent:', tx1);
-  await publicClient.waitForTransactionReceipt({ hash: tx1 });
+  await waitForMined(publicClient, tx1);
   console.log('economy prices set');
 
   console.log('Setting business prices...');
@@ -75,7 +98,7 @@ async function main() {
     args: [1, ids, businessWei],
   });
   console.log('tx sent:', tx2);
-  await publicClient.waitForTransactionReceipt({ hash: tx2 });
+  await waitForMined(publicClient, tx2);
   console.log('business prices set');
 
   const price = economyWei[ids.indexOf(destinationId)];
@@ -87,7 +110,7 @@ async function main() {
     gas: 500_000n,
   });
   console.log('buyTicket tx:', tx3);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: tx3 });
+  const receipt = await waitForMined(publicClient, tx3);
   console.log('buyTicket confirmed, status:', receipt.status);
 
   console.log('---');
