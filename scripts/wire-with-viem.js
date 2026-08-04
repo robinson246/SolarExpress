@@ -3,7 +3,7 @@
 // Expects these environment variables (set as GitHub secrets in workflow):
 // NFT_ADDRESS, SALE_ADDRESS, BASE_TOKEN_URI, SEPOLIA_RPC_URL, PRIVATE_KEY
 
-const { createPublicClient, createWalletClient, http, parseAbi } = require('viem');
+const { createPublicClient, createWalletClient, http, fallback, parseAbi } = require('viem');
 const { sepolia } = require('viem/chains');
 const { privateKeyToAccount } = require('viem/accounts');
 
@@ -11,6 +11,14 @@ const abi = parseAbi([
   'function setSaleContract(address _saleContract)',
   'function setBaseTokenURI(string _baseTokenURI)'
 ]);
+
+const RPC_URLS = [
+  process.env.SEPOLIA_RPC_URL,
+  'https://ethereum-sepolia.publicnode.com',
+  'https://rpc.sepolia.org',
+  'https://sepolia.drpc.org',
+  'https://sepolia.gateway.tenderly.co',
+].filter(Boolean);
 
 function normalizePrivateKey(key) {
   let k = key.trim();
@@ -31,8 +39,9 @@ async function main() {
   }
 
   const account = privateKeyToAccount(key);
-  const publicClient = createPublicClient({ chain: sepolia, transport: http(rpc) });
-  const walletClient = createWalletClient({ account, chain: sepolia, transport: http(rpc) });
+  const transport = fallback(RPC_URLS.map(url => http(url)), { rank: true });
+  const publicClient = createPublicClient({ chain: sepolia, transport });
+  const walletClient = createWalletClient({ account, chain: sepolia, transport });
 
   console.log('Calling setSaleContract(', sale, ')');
   const tx1 = await walletClient.writeContract({
