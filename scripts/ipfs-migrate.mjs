@@ -19,8 +19,8 @@ const PINATA_JWT = process.env.PINATA_JWT;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const RPC_URL = process.env.RPC_URL || 'https://ethereum-sepolia.publicnode.com';
 const NFT_ADDRESS = (process.env.NFT_ADDRESS || '0x76062Ce48e3fA5F24375A27A5Da8ea1d52ED2bee') ;
-const METADATA_BASE = process.env.METADATA_BASE || 'https://solar-express-robinson11.vercel.app/api/nft/metadata';
-const IMAGE_BASE = process.env.IMAGE_BASE || 'https://solar-express-robinson11.vercel.app/api/nft/image';
+const METADATA_BASE = process.env.METADATA_BASE || 'https://solar-express.vercel.app/api/nft/metadata';
+const IMAGE_BASE = process.env.IMAGE_BASE || 'https://solar-express.vercel.app/api/nft/image';
 const PINATA_API = 'https://api.pinata.cloud';
 
 const nftAbi = [
