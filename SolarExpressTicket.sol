@@ -12,7 +12,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 /// Only the approved TicketSale contract (or the owner, for setup) can mint.
 contract SolarExpressTicket is ERC721, ERC721URIStorage, Ownable {
     uint256 private _nextTokenId = 1;
-    string public baseTokenURI = "https://solarexpress.app/api/nft/metadata/";
+    string public baseTokenURI = "https://solar-express-robinson11.vercel.app/api/nft/metadata/";
 
     // The one contract allowed to call mintTicket (set after both are deployed)
     address public saleContract;

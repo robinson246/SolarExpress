@@ -103,7 +103,7 @@ async function main() {
   console.log('Wiring complete. NFT:', nft, 'Sale:', sale, 'BookingHistory:', bookingHistoryAddr, 'BaseURI:', base);
 }
 
-main().catch((err) => {
+main().then(() => process.exit(0)).catch((err) => {
   console.error(err);
   process.exit(1);
 });

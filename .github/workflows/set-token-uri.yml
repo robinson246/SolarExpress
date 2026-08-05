@@ -1,0 +1,33 @@
+name: Set Token URI
+
+on:
+  workflow_dispatch:
+    inputs:
+      token_id:
+        description: 'Token ID to fix (default 1)'
+        required: false
+        default: '1'
+      metadata_uri:
+        description: 'New metadata URI'
+        required: false
+        default: 'https://solar-express-robinson11.vercel.app/api/nft/metadata/1'
+
+jobs:
+  set-token-uri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm ci
+      - name: Set token URI
+        env:
+          NFT_ADDRESS: ${{ secrets.NFT_ADDRESS }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          TOKEN_ID: ${{ github.event.inputs.token_id }}
+          METADATA_URI: ${{ github.event.inputs.metadata_uri }}
+        run: node scripts/set-token-uri.js

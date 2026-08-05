@@ -230,7 +230,10 @@ with an embedded SVG image. Because it is a Next.js API route, the deployed
 frontend must be able to serve `/api/*` (e.g. Vercel) — a static host such as an
 S3 bucket will not work. After deployment, set `baseTokenURI` on the NFT
 contract (e.g. via `scripts/wire-with-viem.js`) to the frontend's URL ending in
-`/api/nft/metadata/`.
+`/api/nft/metadata/`. The production base URL is
+`https://solar-express-robinson11.vercel.app/api/nft/metadata/` — make sure the
+Vercel project does not have Deployment Protection / SSO enabled, otherwise
+Etherscan and marketplaces will not be able to fetch the metadata.
 
 ## Future Improvements
 
