@@ -1,14 +1,17 @@
-const { createPublicClient, http, parseAbiItem, parseEther, decodeEventLog } = require('viem');
+const { createPublicClient, http, fallback, parseAbiItem, parseEther, decodeEventLog } = require('viem');
 const { sepolia } = require('viem/chains');
 
 const SALE_CONTRACT = process.env.SALE_CONTRACT_ADDRESS || '0xA3E410c1A85Ae21774a6aF2D54a818BaedF19eCE';
 
 const RPC_URLS = [
+  process.env.SEPOLIA_RPC_URL,
   'https://ethereum-sepolia.publicnode.com',
   'https://1rpc.io/sepolia',
   'https://sepolia.drpc.org',
   'https://sepolia.gateway.tenderly.co',
-];
+  'https://rpc.sepolia.ethpandaops.io',
+  'https://ethereum-sepolia-rpc.publicnode.com',
+].filter(Boolean);
 
 const ticketPurchasedEvent = parseAbiItem(
   'event TicketPurchased(uint256 indexed tokenId, address indexed buyer, uint256 indexed destinationId, uint256 pricePaid)',
@@ -23,7 +26,7 @@ async function verifyPurchase({ transactionHash, walletAddress, destinationId, t
 
   const client = createPublicClient({
     chain: sepolia,
-    transport: http(process.env.SEPOLIA_RPC_URL || RPC_URLS[0], { timeout: 15000 }),
+    transport: fallback(RPC_URLS.map(url => http(url, { timeout: 15000 })), { rank: true }),
   });
 
   const receipt = await client.getTransactionReceipt({ hash: transactionHash }).catch(() => null);

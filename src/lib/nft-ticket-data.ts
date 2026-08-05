@@ -1,14 +1,8 @@
 import { createPublicClient, fallback, http, formatEther, parseAbiItem, parseEther, type PublicClient } from 'viem';
 import { sepolia } from 'viem/chains';
 import { TICKET_NFT_ADDRESS, TICKET_NFT_ABI } from '@/lib/contract';
+import { SEPOLIA_RPC_URLS } from '@/lib/rpc';
 import { bodies } from '@/data/bodies';
-
-const RPC_URLS = [
-  'https://ethereum-sepolia.publicnode.com',
-  'https://1rpc.io/sepolia',
-  'https://sepolia.drpc.org',
-  'https://sepolia.gateway.tenderly.co',
-];
 
 const ticketPurchasedEvent = parseAbiItem(
   'event TicketPurchased(uint256 indexed tokenId, address indexed buyer, uint256 indexed destinationId, uint256 pricePaid)',
@@ -21,7 +15,7 @@ const LOG_WINDOW = 6n;
 export function createClient() {
   return createPublicClient({
     chain: sepolia,
-    transport: fallback(RPC_URLS.map(url => http(url, { timeout: 5000 })), { rank: true }),
+    transport: fallback(SEPOLIA_RPC_URLS.map(url => http(url, { timeout: 5000 })), { rank: true }),
   });
 }
 

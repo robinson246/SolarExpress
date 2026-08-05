@@ -124,7 +124,7 @@ cp .env.example .env.local
 # NEXT_PUBLIC_TICKET_SALE_ADDRESS=0x...
 # NEXT_PUBLIC_TICKET_NFT_ADDRESS=0x...
 # NEXT_PUBLIC_BOOKING_HISTORY_ADDRESS=0x...
-# NEXT_PUBLIC_SEPOLIA_RPC_URL=https://rpc.sepolia.org
+# NEXT_PUBLIC_SEPOLIA_RPC_URL=https://ethereum-sepolia.publicnode.com
 # API_BACKEND_URL=http://localhost:4000
 
 # Run development server
@@ -169,8 +169,9 @@ npm run dev
 | `NEXT_PUBLIC_TICKET_SALE_ADDRESS` | Deployed TicketSale contract address |
 | `NEXT_PUBLIC_TICKET_NFT_ADDRESS` | Deployed TicketNFT (ERC-721) contract address |
 | `NEXT_PUBLIC_BOOKING_HISTORY_ADDRESS` | Deployed BookingHistory contract address |
-| `NEXT_PUBLIC_SEPOLIA_RPC_URL` | Sepolia RPC endpoint |
+| `NEXT_PUBLIC_SEPOLIA_RPC_URL` | Optional Sepolia RPC endpoint; appended to the built-in fallback list |
 | `API_BACKEND_URL` | Backend API URL used by frontend requests, API routes, and rewrites |
+| `PINATA_JWT` | Pinata JWT for the IPFS mint pipeline (see NFT Metadata Endpoint below; server-side, set in Vercel) |
 
 ### Backend (`.env`)
 
@@ -222,18 +223,36 @@ Update `.env.local` with the deployed addresses after deployment.
 
 ## NFT Metadata Endpoint
 
-Tickets store `tokenURI` as `{BASE_TOKEN_URI}/{tokenId}` and the metadata is
-generated on-demand by the frontend API route at `/api/nft/metadata/[tokenId]`.
-The route reads the ticket data from the `SolarExpressTicket` contract and the
-`TicketPurchased` event from `TicketSale`, then returns an ERC-721 metadata JSON
-with an embedded SVG image. Because it is a Next.js API route, the deployed
-frontend must be able to serve `/api/*` (e.g. Vercel) — a static host such as an
-S3 bucket will not work. After deployment, set `baseTokenURI` on the NFT
-contract (e.g. via `scripts/wire-with-viem.js`) to the frontend's URL ending in
-`/api/nft/metadata/`. The production base URL is
-`https://solar-express-robinson11.vercel.app/api/nft/metadata/` — make sure the
-Vercel project does not have Deployment Protection / SSO enabled, otherwise
-Etherscan and marketplaces will not be able to fetch the metadata.
+Tickets are minted with a `tokenURI` that is set **per-token to immutable IPFS
+metadata** immediately after each purchase. The mint flow (`useBuyTicket.ts`)
+calls `/api/nft/generate-metadata`, which renders the ticket SVG to a PNG
+(`@resvg/resvg-js`, bundled Roboto fonts) and uploads both the PNG and the
+metadata JSON to Pinata, then signs `setTokenURI(tokenId, ipfs://CID)` with the
+owner wallet. This makes token display fully decentralized — Etherscan resolves
+the `ipfs://` URI directly and no live app host is involved.
+
+For mints where the signer is not the contract owner (`setTokenURI` is
+`onlyOwner`), the token falls back to the on-demand route
+`/api/nft/metadata/[tokenId]`, which reads the ticket from `SolarExpressTicket`
+and the `TicketPurchased` event from `TicketSale`, then returns an ERC-721
+metadata JSON with a PNG image. The contract `baseTokenURI` points at
+`https://solar-express.vercel.app/api/nft/metadata/` — make sure the Vercel
+project does not have Deployment Protection / SSO enabled, otherwise Etherscan
+and marketplaces cannot fetch the metadata.
+
+### Requirements
+
+- `PINATA_JWT` must be set in the Vercel environment of the frontend project.
+  Without it, `/api/nft/generate-metadata` returns `503` and new mints use the
+  on-demand route only.
+- Existing tokens can be retro-migrated to IPFS with:
+
+  ```bash
+  PINATA_JWT=<jwt> PRIVATE_KEY=<deployer private key> node scripts/ipfs-migrate.mjs 2 3 5
+  ```
+
+  The script fetches each token's current PNG + metadata, pins them on Pinata,
+  and calls `setTokenURI` on-chain (must be the contract owner).
 
 ## Future Improvements
 

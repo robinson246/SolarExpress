@@ -7,6 +7,7 @@ import { parseEther, decodeEventLog, createPublicClient, http, fallback } from '
 import { sepolia } from 'viem/chains';
 import { getTransactionReceipt } from 'viem/actions';
 import { generateNFTMetadata } from '@/lib/nft-service';
+import { SEPOLIA_RPC_URLS } from '@/lib/rpc';
 import type { TransactionReceipt, Log } from 'viem';
 
 const TX_HASH_KEY = 'solarexpress_pending_tx';
@@ -25,7 +26,10 @@ async function warmNftCache(tokenId: number) {
   try {
     const publicClient = createPublicClient({
       chain: sepolia,
-      transport: http('https://ethereum-sepolia.publicnode.com', { timeout: 5000 }),
+      transport: fallback(
+        SEPOLIA_RPC_URLS.map(url => http(url, { timeout: 5000 })),
+        { rank: true },
+      ),
     });
     const base = (await publicClient.readContract({
       address: TICKET_NFT_ADDRESS,
@@ -117,12 +121,10 @@ export function useBuyTicket() {
     try {
       const publicClient = createPublicClient({
         chain: sepolia,
-        transport: fallback([
-          http('https://ethereum-sepolia.publicnode.com'),
-          http('https://1rpc.io/sepolia'),
-          http('https://sepolia.drpc.org'),
-          http('https://sepolia.gateway.tenderly.co'),
-        ], { rank: true }),
+        transport: fallback(
+          SEPOLIA_RPC_URLS.map(url => http(url)),
+          { rank: true },
+        ),
       });
       const rcpt = await getTransactionReceipt(publicClient, { hash: activeHash });
       if (rcpt && rcpt.status === 'success') {
@@ -182,7 +184,7 @@ export function useBuyTicket() {
         void warmNftCache(resolvedTokenId);
       })();
     }
-  }, [resolvedIsConfirmed, resolvedTokenId, connectedAddress]);
+  }, [resolvedIsConfirmed, resolvedTokenId, connectedAddress, writeTokenUriAsync]);
 
   async function buyTicket(
     destinationId: number,

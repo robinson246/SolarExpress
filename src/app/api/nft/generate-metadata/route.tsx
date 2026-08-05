@@ -4,18 +4,12 @@ import { Resvg } from '@resvg/resvg-js';
 import { createPublicClient, http, parseAbiItem, fallback } from 'viem';
 import { sepolia } from 'viem/chains';
 import { TICKET_SALE_ADDRESS } from '@/lib/contract';
+import { SEPOLIA_RPC_URLS } from '@/lib/rpc';
 import { bodies } from '@/data/bodies';
 import { generateNFTTicketSVG } from '@/lib/generate-nft-svg';
 
 const PINATA_JWT = process.env.PINATA_JWT;
 const PINATA_API = 'https://api.pinata.cloud';
-
-const RPC_URLS = [
-  'https://ethereum-sepolia.publicnode.com',
-  'https://1rpc.io/sepolia',
-  'https://sepolia.drpc.org',
-  'https://sepolia.gateway.tenderly.co',
-];
 
 const RPC_TIMEOUT_MS = 5_000;
 const RECENT_BLOCK_WINDOW = 60_000n;
@@ -48,7 +42,7 @@ async function predictNextTokenId(): Promise<number> {
   const publicClient = createPublicClient({
     chain: sepolia,
     transport: fallback(
-      RPC_URLS.map(url => http(url, { timeout: RPC_TIMEOUT_MS })),
+      SEPOLIA_RPC_URLS.map(url => http(url, { timeout: RPC_TIMEOUT_MS })),
       { rank: true },
     ),
   });

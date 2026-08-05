@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { findTicketData } from '@/lib/nft-ticket-data';
-import { generateNFTTicketSVG } from '@/lib/generate-nft-svg';
 
 export const dynamic = 'force-dynamic';
 

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // backend/ is a CommonJS Express app; the Next.js TS config does not apply.
     "backend/**",
+    // scripts/ are standalone Node scripts (CommonJS + ESM), not app code.
+    "scripts/**",
   ]),
 ]);
 

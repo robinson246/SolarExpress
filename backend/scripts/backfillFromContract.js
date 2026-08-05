@@ -22,9 +22,10 @@ const RPC_URLS = [
   process.env.SEPOLIA_RPC_URL,
   'https://ethereum-sepolia.publicnode.com',
   'https://1rpc.io/sepolia',
-  'https://rpc.sepolia.org',
   'https://sepolia.drpc.org',
   'https://sepolia.gateway.tenderly.co',
+  'https://rpc.sepolia.ethpandaops.io',
+  'https://ethereum-sepolia-rpc.publicnode.com',
 ].filter(Boolean);
 
 // The live TicketSale contract. Override with TICKET_SALE_ADDRESS or
