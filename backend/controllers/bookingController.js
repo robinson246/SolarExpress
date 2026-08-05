@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Booking = require('../models/Booking');
 const Notification = require('../models/Notification');
 const { generateFlightDetails } = require('../utils/generateFlightDetails');
+const { verifyPurchase } = require('../services/verifyPurchase');
 
 async function createBooking(req, res) {
   try {
@@ -15,6 +16,23 @@ async function createBooking(req, res) {
 
     if (!walletAddress || !destinationId || !transactionHash || tokenId === undefined || !pricePaid) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (req.user.walletAddress && req.user.walletAddress.toLowerCase() !== String(walletAddress).toLowerCase()) {
+      return res.status(403).json({ error: 'Wallet does not match authenticated user' });
+    }
+
+    if (process.env.DISABLE_BOOKING_VERIFY !== 'true') {
+      const verification = await verifyPurchase({
+        transactionHash,
+        walletAddress,
+        destinationId,
+        tokenId,
+        pricePaid,
+      });
+      if (!verification.ok) {
+        return res.status(400).json({ error: `Booking verification failed: ${verification.error}` });
+      }
     }
 
     const existing = await Booking.findOne({ transactionHash: transactionHash.toLowerCase() });

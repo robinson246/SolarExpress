@@ -14,7 +14,7 @@ async function uploadTicket(req, res) {
       name: name || 'SolarExpress Ticket',
       description: description || 'Official SolarExpress Interplanetary Boarding Pass.',
       image: ipfsUri(imageCid),
-      external_url: externalUrl || 'https://solarexpress.app',
+      external_url: externalUrl || 'https://solar-express.vercel.app',
     };
 
     if (Array.isArray(attributes) && attributes.length > 0) {
