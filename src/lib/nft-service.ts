@@ -12,6 +12,7 @@ export async function generateNFTMetadata(
   priceEth: string,
   walletAddress?: string,
   travelClass: string = 'economy',
+  tokenId?: number,
 ): Promise<GenerateMetadataResponse> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -25,6 +26,7 @@ export async function generateNFTMetadata(
         priceEth,
         walletAddress,
         travelClass,
+        tokenId,
       }),
       signal: controller.signal,
     });

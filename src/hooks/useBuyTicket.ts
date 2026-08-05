@@ -1,14 +1,46 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { TICKET_SALE_ADDRESS, TICKET_SALE_ABI } from '@/lib/contract';
+import { useWriteContract, useWaitForTransactionReceipt, useSwitchChain, useChainId, useAccount } from 'wagmi';
+import { TICKET_SALE_ADDRESS, TICKET_SALE_ABI, TICKET_NFT_ADDRESS, TICKET_NFT_ABI } from '@/lib/contract';
 import { parseEther, decodeEventLog, createPublicClient, http, fallback } from 'viem';
 import { sepolia } from 'viem/chains';
 import { getTransactionReceipt } from 'viem/actions';
+import { generateNFTMetadata } from '@/lib/nft-service';
 import type { TransactionReceipt, Log } from 'viem';
 
 const TX_HASH_KEY = 'solarexpress_pending_tx';
+
+const baseTokenURIFragment = {
+  type: 'function',
+  name: 'baseTokenURI',
+  stateMutability: 'view',
+  inputs: [],
+  outputs: [{ name: '', type: 'string' }],
+} as const;
+
+// Prime the CDN/edge cache for a freshly minted token so NFT crawlers
+// (Etherscan) get an instant response instead of a cold serverless start.
+async function warmNftCache(tokenId: number) {
+  try {
+    const publicClient = createPublicClient({
+      chain: sepolia,
+      transport: http('https://ethereum-sepolia.publicnode.com', { timeout: 5000 }),
+    });
+    const base = (await publicClient.readContract({
+      address: TICKET_NFT_ADDRESS,
+      abi: [baseTokenURIFragment],
+      functionName: 'baseTokenURI',
+    })) as string;
+    const imageBase = base.replace(/\/metadata\/$/, '/image/');
+    await Promise.all([
+      fetch(`${base}${tokenId}`, { mode: 'no-cors' }),
+      fetch(`${imageBase}${tokenId}?v=2`, { mode: 'no-cors' }),
+    ]);
+  } catch {
+    // Warming is best-effort; ignore failures.
+  }
+}
 
 export type TicketStep = 'idle' | 'preparing' | 'pending' | 'broadcasting' | 'confirming' | 'success' | 'error';
 
@@ -30,6 +62,7 @@ export function useBuyTicket() {
   });
   const [writeError, setWriteError] = useState<Error | null>(null);
   const checkingRef = useRef(false);
+  const purchaseRef = useRef<{ destinationId: number; priceEth: string; travelClass: string } | null>(null);
 
   const {
     writeContractAsync,
@@ -37,6 +70,12 @@ export function useBuyTicket() {
     isPending,
     reset: resetWrite,
   } = useWriteContract();
+
+  const { writeContractAsync: writeTokenUriAsync } = useWriteContract();
+  const { address: connectedAddress } = useAccount();
+
+  const { switchChainAsync } = useSwitchChain();
+  const activeChainId = useChainId();
 
   const activeHash = txHash || restoredHash;
 
@@ -109,8 +148,41 @@ export function useBuyTicket() {
   useEffect(() => {
     if (resolvedIsConfirmed && resolvedTokenId !== null) {
       sessionStorage.removeItem(TX_HASH_KEY);
+      const purchase = purchaseRef.current;
+      void (async () => {
+        if (purchase) {
+          try {
+            const result = await generateNFTMetadata(
+              purchase.destinationId,
+              purchase.priceEth,
+              connectedAddress,
+              purchase.travelClass,
+              resolvedTokenId,
+            );
+            if (result.success && result.metadataUri.startsWith('ipfs://')) {
+              try {
+                const uriHash = await writeTokenUriAsync({
+                  address: TICKET_NFT_ADDRESS,
+                  abi: TICKET_NFT_ABI,
+                  functionName: 'setTokenURI',
+                  args: [BigInt(resolvedTokenId), result.metadataUri],
+                  chainId: sepolia.id,
+                });
+                console.log('[useBuyTicket] setTokenURI submitted:', uriHash);
+              } catch {
+                console.warn('[useBuyTicket] setTokenURI failed (is the connected wallet the contract owner?); keeping baseTokenURI rendering.');
+                void warmNftCache(resolvedTokenId);
+              }
+              return;
+            }
+          } catch {
+            console.warn('[useBuyTicket] IPFS metadata publish failed; falling back to CDN warm.');
+          }
+        }
+        void warmNftCache(resolvedTokenId);
+      })();
     }
-  }, [resolvedIsConfirmed, resolvedTokenId]);
+  }, [resolvedIsConfirmed, resolvedTokenId, connectedAddress]);
 
   async function buyTicket(
     destinationId: number,
@@ -125,13 +197,18 @@ export function useBuyTicket() {
       setManualReceipt(null);
       setManualTokenId(null);
       setPreparing(true);
+      purchaseRef.current = { destinationId, priceEth, travelClass };
       const classId = travelClass === 'business' ? 1 : travelClass === 'first' ? 2 : 0;
+      if (activeChainId !== sepolia.id) {
+        await switchChainAsync({ chainId: sepolia.id });
+      }
       const hash = await writeContractAsync({
         address: TICKET_SALE_ADDRESS,
         abi: TICKET_SALE_ABI,
         functionName: 'buyTicket',
         args: [BigInt(destinationId), classId],
         value: parseEther(priceEth),
+        chainId: sepolia.id,
         gas: 500_000n,
       });
       setPreparing(false);

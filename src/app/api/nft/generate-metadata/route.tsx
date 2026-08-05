@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
+import { Resvg } from '@resvg/resvg-js';
 import { createPublicClient, http, parseAbiItem, fallback } from 'viem';
 import { sepolia } from 'viem/chains';
 import { TICKET_SALE_ADDRESS } from '@/lib/contract';
 import { bodies } from '@/data/bodies';
 import { generateNFTTicketSVG } from '@/lib/generate-nft-svg';
-import { getBackendUrl } from '@/lib/backend-url';
 
-const BACKEND_URL = getBackendUrl();
+const PINATA_JWT = process.env.PINATA_JWT;
+const PINATA_API = 'https://api.pinata.cloud';
 
 const RPC_URLS = [
   'https://ethereum-sepolia.publicnode.com',
@@ -18,6 +20,11 @@ const RPC_URLS = [
 const RPC_TIMEOUT_MS = 5_000;
 const RECENT_BLOCK_WINDOW = 60_000n;
 const CHUNK_SIZE = 30_000n;
+
+const FONT_FILES = [
+  path.join(process.cwd(), 'public/fonts/Roboto-Regular.ttf'),
+  path.join(process.cwd(), 'public/fonts/Roboto-Bold.ttf'),
+];
 
 export const maxDuration = 90;
 
@@ -81,9 +88,60 @@ async function predictNextTokenId(): Promise<number> {
   return tokenIds.length > 0 ? Math.max(...tokenIds) + 1 : 0;
 }
 
+function rasterizePng(svg: string): Uint8Array {
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: 'original' },
+    font: {
+      fontFiles: FONT_FILES,
+      defaultFontFamily: 'Roboto',
+      loadSystemFonts: false,
+    },
+  });
+  return resvg.render().asPng();
+}
+
+async function uploadImageToPinata(png: Uint8Array, name: string): Promise<string> {
+  const safeName = name.replace(/[^a-zA-Z0-9]/g, '_');
+  const form = new FormData();
+  form.append('file', new Blob([png as BlobPart], { type: 'image/png' }), `${safeName}.png`);
+
+  const res = await fetch(`${PINATA_API}/pinning/pinFileToIPFS`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${PINATA_JWT}` },
+    body: form,
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Pinata image upload failed (${res.status}): ${errBody}`);
+  }
+
+  const data = await res.json();
+  return data.IpfsHash as string;
+}
+
+async function uploadMetadataToPinata(metadata: Record<string, unknown>): Promise<string> {
+  const res = await fetch(`${PINATA_API}/pinning/pinJSONToIPFS`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${PINATA_JWT}`,
+    },
+    body: JSON.stringify(metadata),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Pinata metadata upload failed (${res.status}): ${errBody}`);
+  }
+
+  const data = await res.json();
+  return data.IpfsHash as string;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { destinationId, priceEth, walletAddress, travelClass } = await req.json();
+    const { destinationId, priceEth, walletAddress, travelClass, tokenId } = await req.json();
     const passengerClass = typeof travelClass === 'string' && travelClass.length > 0 ? travelClass : 'economy';
 
     if (destinationId == null || !priceEth) {
@@ -101,53 +159,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const predictedTokenId = await predictNextTokenId();
+    const resolvedTokenId =
+      typeof tokenId === 'number' && Number.isInteger(tokenId) && tokenId >= 0
+        ? tokenId
+        : await predictNextTokenId();
 
     const fullSvg = generateNFTTicketSVG({
       destinationId,
-      tokenId: predictedTokenId,
+      tokenId: resolvedTokenId,
       priceEth,
       walletAddress,
       passengerClass,
     });
 
-    const ticketName = `SolarExpress Ticket #${predictedTokenId}`;
-    const attributes = [
-      { trait_type: 'Destination', value: body.name },
-      { trait_type: 'Passenger Class', value: passengerClass },
-      { trait_type: 'Price', value: `${priceEth} ETH` },
-      { trait_type: 'Network', value: 'Sepolia' },
-      { trait_type: 'Token ID', value: String(predictedTokenId) },
-    ];
-
-    const uploadRes = await fetch(`${BACKEND_URL}/api/pinata/upload-ticket`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        svgString: fullSvg,
-        name: ticketName,
-        description: `Official SolarExpress Interplanetary Boarding Pass to ${body.name}.`,
-        externalUrl: 'https://solarexpress.app',
-        attributes,
-      }),
-    });
-
-    if (!uploadRes.ok) {
-      const errBody = await uploadRes.text();
-      console.error('[generate-metadata] Backend upload failed:', uploadRes.status, errBody);
+    if (!PINATA_JWT) {
       return NextResponse.json(
-        { error: `Pinata upload failed: ${uploadRes.statusText}` },
-        { status: 502 },
+        { success: false, error: 'PINATA_JWT is not configured', predictedTokenId: resolvedTokenId },
+        { status: 503 },
       );
     }
 
-    const result = await uploadRes.json();
+    const png = rasterizePng(fullSvg);
+    const imageCid = await uploadImageToPinata(png, `SolarExpress Ticket #${resolvedTokenId}`);
+
+    const metadata = {
+      name: `SolarExpress Ticket #${resolvedTokenId}`,
+      description: `Official SolarExpress Interplanetary Boarding Pass to ${body.name}.`,
+      image: `ipfs://${imageCid}`,
+      external_url: 'https://solar-express.vercel.app',
+      attributes: [
+        { trait_type: 'Destination', value: body.name },
+        { trait_type: 'Passenger Class', value: passengerClass },
+        { trait_type: 'Price', value: `${priceEth} ETH` },
+        { trait_type: 'Network', value: 'Sepolia' },
+        { trait_type: 'Token ID', value: String(resolvedTokenId) },
+      ],
+    };
+
+    const metadataCid = await uploadMetadataToPinata(metadata);
 
     return NextResponse.json({
       success: true,
-      metadataUri: result.metadataUri,
-      imageCid: result.imageCid,
-      predictedTokenId,
+      metadataUri: `ipfs://${metadataCid}`,
+      imageCid,
+      predictedTokenId: resolvedTokenId,
     });
   } catch (err) {
     console.error('[generate-metadata] Error:', err);

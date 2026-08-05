@@ -4,6 +4,7 @@ import { getBackendUrl } from './src/lib/backend-url';
 const API_BACKEND = getBackendUrl();
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['@resvg/resvg-js'],
   async rewrites() {
     return [
       { source: '/api/auth/:path*', destination: `${API_BACKEND}/api/auth/:path*` },

@@ -80,7 +80,7 @@ export function generateNFTTicketSVG({ destinationId, tokenId, priceEth, walletA
 
   <rect x="${VW * 0.057}" y="${VH * 0.03}" width="${VW * 0.886}" height="${VH * 0.94}" rx="18" fill="url(#panel-${uid})" stroke="${art.accentColor}" stroke-width="1"/>
 
-  <text x="${VW * 0.1}" y="${VH * 0.065}" fill="${art.accentColor}" font-size="19" font-family="Arial" font-weight="bold">SOLAREXPRESS</text>
+  <text x="${VW * 0.1}" y="${VH * 0.065}" fill="${art.accentColor}" font-size="19" font-family="Roboto" font-weight="bold">SOLAREXPRESS</text>
   <text x="${VW * 0.74}" y="${VH * 0.065}" fill="#94a3b8" font-size="10">ERC-721</text>
 
   ${planetMarkup}
@@ -97,12 +97,12 @@ export function generateNFTTicketSVG({ destinationId, tokenId, priceEth, walletA
   <text x="${VW * 0.1}" y="313.5" fill="white" font-size="13">#${String(tokenId).padStart(3, '0')}</text>
 
   <text x="${VW * 0.4}" y="302.5" fill="#94a3b8" font-size="8">PRICE</text>
-  <text x="${VW * 0.4}" y="313.5" fill="white" font-size="13">${escapeXml(priceEth)} ETH</text>
+  <text x="${VW * 0.4}" y="313.5" fill="white" font-size="13">${escapeXml(priceEth === '0' || priceEth === '' ? '—' : `${priceEth} ETH`)}</text>
 
   <text x="${VW * 0.7}" y="302.5" fill="#94a3b8" font-size="8">NETWORK</text>
   <text x="${VW * 0.7}" y="313.5" fill="${art.accentColor}" font-size="13">SEPOLIA</text>
 
-  ${walletAddress ? `<text x="${VW * 0.1}" y="324.5" fill="#94a3b8" font-size="10" font-family="monospace">${escapeXml(walletAddress.slice(0, 6))}...${escapeXml(walletAddress.slice(-4))}</text>` : ''}
+  ${walletAddress ? `<text x="${VW * 0.1}" y="324.5" fill="#94a3b8" font-size="10" font-family="Roboto">${escapeXml(walletAddress.slice(0, 6))}...${escapeXml(walletAddress.slice(-4))}</text>` : ''}
 
   <rect x="${VW * 0.1}" y="326" width="90" height="22" rx="11" fill="#0f766e"/>
   <text x="${VW * 0.1 + 10}" y="341" fill="white" font-size="9">NFT MINTED</text>
