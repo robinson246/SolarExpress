@@ -1,9 +1,9 @@
 'use client';
-import { useReadContract, useAccount } from 'wagmi';
+import { useReadContract, useConnection } from 'wagmi';
 import { BOOKING_HISTORY_ADDRESS, BOOKING_HISTORY_ABI } from '@/lib/contract';
 
 export function useOnChainBookings() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useConnection();
   const { data, isLoading, isError, error, refetch } = useReadContract({
     address: BOOKING_HISTORY_ADDRESS,
     abi: BOOKING_HISTORY_ABI,

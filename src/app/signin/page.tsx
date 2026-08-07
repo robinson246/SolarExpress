@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type SubmitEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import SolarExpressLogo from '@/components/ui/SolarExpressLogo';
@@ -23,7 +23,7 @@ export default function SignInPage() {
     return <LoadingScreen visible message='Checking session...' />;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSignUp && password.length < 8) return;
     try {

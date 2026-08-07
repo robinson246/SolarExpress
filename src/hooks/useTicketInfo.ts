@@ -1,12 +1,11 @@
 'use client';
 
-import { useReadContract } from 'wagmi';
-import { useAccount } from 'wagmi';
+import { useReadContract, useConnection } from 'wagmi';
 import { TICKET_NFT_ADDRESS, TICKET_NFT_ABI } from '@/lib/contract';
 import type { Address } from 'viem';
 
 function useEnabled() {
-  const { isConnected, address } = useAccount();
+  const { isConnected, address } = useConnection();
   return { ready: isConnected && !!address, address };
 }
 

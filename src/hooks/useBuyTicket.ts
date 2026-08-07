@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useSwitchChain, useChainId, useAccount } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useSwitchChain, useChainId, useConnection } from 'wagmi';
 import { TICKET_SALE_ADDRESS, TICKET_SALE_ABI, TICKET_NFT_ADDRESS, TICKET_NFT_ABI } from '@/lib/contract';
 import { parseEther, decodeEventLog, createPublicClient, http, fallback } from 'viem';
 import { sepolia } from 'viem/chains';
@@ -76,7 +76,7 @@ export function useBuyTicket() {
   } = useWriteContract();
 
   const { writeContractAsync: writeTokenUriAsync } = useWriteContract();
-  const { address: connectedAddress } = useAccount();
+  const { address: connectedAddress } = useConnection();
 
   const { switchChainAsync } = useSwitchChain();
   const activeChainId = useChainId();

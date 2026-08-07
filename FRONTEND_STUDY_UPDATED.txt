@@ -1,0 +1,1046 @@
+================================================================================
+ SolarExpress — FRONTEND DETAILED STUDY (UPDATED)
+ (Block-by-block explanation of every file + how to inspect & find code)
+ Written for a student preparing to present the frontend to a professor.
+
+ UPDATED: reflects the current codebase after removing the mobile view,
+ the About page, and the deprecated FormEvent usage in the sign-in page.
+ See the appendix "RECENT CHANGES" at the end of this document.
+================================================================================
+
+TABLE OF CONTENTS
+  0.  What this document is
+  1.  Project at a glance (what the frontend does)
+  2.  How to run and inspect the project
+  3.  How to find and read code (3 methods)
+  4.  Project structure map (folders explained)
+  5.  Tech stack — what each library is for
+  6.  FILE-BY-FILE / BLOCK-BY-BLOCK EXPLANATION
+       6.1  Configuration & entry
+       6.2  App pages (src/app)
+       6.3  Reusable UI components (src/components)
+       6.4  Hooks (src/hooks)
+       6.5  Data & business logic (src/data)
+       6.6  Infrastructure helpers (src/lib)
+       6.7  NFT API routes (server side, supports the frontend)
+  7.  How the booking flow works end-to-end (for the professor)
+  8.  How the 3D solar system works
+  9.  Key talking points / answers to likely professor questions
+  10. Quick reference: glossary of terms
+  Appendix — RECENT CHANGES (what was removed/fixed and why)
+
+
+================================================================================
+0. WHAT THIS DOCUMENT IS
+================================================================================
+This file explains the ENTIRE frontend of the SolarExpress web app, file by
+file and block by block. It is written so you can:
+  * understand what every file does,
+  * find any piece of code quickly,
+  * and explain the code clearly to a professor in a presentation.
+
+The frontend lives inside the "src" folder of the repository.
+Backend (Express/MongoDB) and smart contracts (Solidity) exist too, but this
+document focuses ONLY on the frontend. Where the frontend talks to the backend
+or to the blockchain, we explain that as well.
+
+This is the UPDATED edition. The app now targets a single desktop layout:
+there is no mobile-specific UI, and there is no About page.
+
+
+================================================================================
+1. PROJECT AT A GLANCE
+================================================================================
+SolarExpress is a Web3 "interplanetary travel booking" demo app. The frontend:
+
+  * Shows a 3D solar system (Three.js) where you can click planets and moons.
+  * Lets a user select a destination, open a booking wizard, choose date/class,
+    sign a blockchain transaction with a wallet (MetaMask via wagmi), and mint
+    an NFT ticket on the Sepolia test network.
+  * Saves the booking in a backend database (MongoDB) and shows it later in
+    "My Tickets" (NFT gallery + booking history).
+  * Supports email sign in/sign up (JWT cookie sessions) plus wallet connect.
+  * Renders NFT ticket artwork as SVG (both on screen and as on-chain PNGs).
+
+Main screens (routes):
+  /               → Explore page: 3D solar system + destination panel + booking
+  /signin         → Email login / signup
+  /booking-history→ NFT Gallery + Booking History tabs
+  /faq            → FAQ accordion
+
+There is intentionally NO /about route — that page was removed to keep the
+app focused on exploration and booking.
+
+
+================================================================================
+2. HOW TO RUN AND INSPECT THE PROJECT
+================================================================================
+Requirements: Node.js 18+, a backend running on http://localhost:4000,
+and (for booking) the MetaMask browser extension with Sepolia test ETH.
+
+Commands (from the project root folder):
+  npm install       # installs all dependencies
+  npm run dev       # starts the Next.js dev server on http://localhost:3000
+  npm run build     # production build (also type-checks the whole project)
+  npm run lint      # runs ESLint
+  npm start         # runs the production build
+
+To SEE the app: open http://localhost:3000 in a browser.
+To SIGN IN you need a registered account (register at /signin).
+
+Quick sanity checks while developing:
+  * Any TypeScript/type error appears in the terminal running `npm run dev`.
+  * ESLint errors appear when you run `npm run lint`.
+  * Browser console (F12) shows React errors, wagmi/RPC logs, and the
+    console.log / console.warn lines placed inside the code.
+
+Environment variables used by the frontend (see .env.example if present):
+  NEXT_PUBLIC_API_URL / API_BACKEND_URL  → backend base URL (default http://localhost:4000)
+  NEXT_PUBLIC_SEPOLIA_RPC_URL            → optional paid RPC key (Infura/Alchemy)
+  NEXT_PUBLIC_TICKET_SALE_ADDRESS        → TicketSale contract address
+  NEXT_PUBLIC_TICKET_NFT_ADDRESS         → TicketNFT (ERC-721) address
+  NEXT_PUBLIC_BOOKING_HISTORY_ADDRESS    → BookingHistory contract address
+  PINATA_JWT                             → Pinata IPFS upload key (server-side)
+
+
+================================================================================
+3. HOW TO FIND AND READ CODE (IMPORTANT FOR THE PRESENTATION)
+================================================================================
+The single most useful fact: the path alias "@/" means "./src/".
+So in any file, an import like:
+      import { bodies } from '@/data/bodies';
+actually resolves to:
+      <project>/src/data/bodies.ts
+
+--------------------------------------------------------------------
+METHOD 1 — The Explorer / editor (easiest)
+--------------------------------------------------------------------
+Open the project in VS Code. The folder tree on the left mirrors the
+structure in section 4. To jump to a file:
+  1. Press Ctrl+P (Windows) and type part of a file name, e.g. "useBuyTicket".
+  2. Click the file. Press Ctrl+P again to move between files.
+To jump to a DEFINITION of any imported symbol:
+  3. Hold Ctrl and click on the name (e.g. Ctrl+click "useBuyTicket" in
+     BookTicketButton.tsx) → it opens the source file where it is defined.
+
+--------------------------------------------------------------------
+METHOD 2 — Search inside the editor
+--------------------------------------------------------------------
+  * Ctrl+Shift+F  → search ALL files for any text (e.g. "buyTicket",
+                    "destinationId", "useAccount").
+  * Ctrl+F        → search only the current open file.
+  * Ctrl+Shift+P → "Go to Symbol in File" → lists functions/components of the
+                    current file (great to demonstrate to a professor).
+
+--------------------------------------------------------------------
+METHOD 3 — Terminal (Command line) — using ripgrep
+--------------------------------------------------------------------
+On Windows PowerShell, use rg (fast) or Select-String (built-in).
+Examples (run from the project root):
+    rg "useBuyTicket" src                  # find every file using the hook
+    rg "buyTicket" src/components           # where is booking triggered?
+    rg "TICKET_SALE_ADDRESS" src           # who imports the contract address
+    rg "onPlanetSelect" src                 # trace the planet-selection flow
+
+Built-in equivalent without installing anything:
+    Select-String -Path "src\**\*.ts*" -Pattern "useBuyTicket"
+
+--------------------------------------------------------------------
+METHOD 4 — Browser Developer Tools (runtime inspection)
+--------------------------------------------------------------------
+  * F12 → Console : shows logs and errors; type `document.title` etc.
+  * F12 → Network : see every fetch call; filter "Fetch/XHR" to watch the app
+    talk to the backend (localhost:4000) and to IPFS (Pinata).
+  * F12 → React DevTools tab (install the extension): click any component to
+    see its props and state — very useful to explain component props live.
+  * F12 → Elements : select any element to see the rendered DOM and the
+    Tailwind classes applied.
+
+--------------------------------------------------------------------
+HOW TO TRACE A FEATURE (recipe to demonstrate):
+--------------------------------------------------------------------
+Example: "find where the ticket NFT image is generated".
+  1. rg "generateNFTTicketSVG" src
+     → matches lib/generate-nft-svg.ts (definition) and the API routes.
+  2. Open components/nft/NFTTicket.tsx → same artwork is rendered as React SVG.
+  3. Open app/api/nft/image/[tokenId]/route.ts → server turns the SVG into a
+     PNG. Both use the shared function in lib/generate-nft-svg.ts.
+This "search → definition → callers" pattern works for ANY feature and is a
+great thing to show the professor.
+
+
+================================================================================
+4. PROJECT STRUCTURE MAP
+================================================================================
+<project root>
+├─ package.json                # dependencies + npm scripts
+├─ tsconfig.json               # TypeScript config, "@/*" → "./src/*"
+├─ next.config.*               # Next.js config (if present)
+├─ public/                     # static files: earth textures, Roboto fonts, favicon
+└─ src/
+   ├─ app/                     # NEXT.JS APP ROUTER — each folder = a route
+   │  ├─ layout.tsx            # root layout (wraps every page)
+   │  ├─ page.tsx              # route "/" — Explore (3D solar system)
+   │  ├─ loading.tsx           # loading UI shown during navigation
+   │  ├─ globals.css           # Tailwind + custom CSS (glass cards, buttons)
+   │  ├─ signin/page.tsx       # route "/signin" — login/signup
+   │  ├─ booking-history/page.tsx # "/booking-history" — tickets
+   │  ├─ faq/page.tsx          # "/faq" — FAQ accordion
+   │  └─ api/nft/...           # SERVER routes that generate NFT art (see 6.7)
+   ├─ components/
+   │  ├─ layout/               # NavBar
+   │  ├─ menu/                 # PlanetMenu (destination list + search)
+   │  ├─ scene/                # 3D: SolarSystem, Planet, Sun, Earth, PlanetRenderer
+   │  ├─ nft/                  # NFTTicket SVG, PlanetRenderer (SVG art)
+   │  ├─ panel/                # DestinationPanel, RoutePanel, BookTicketButton
+   │  ├─ ui/                   # LoadingScreen, Modal, SolarExpressLogo
+   │  └─ wallet/               # Web3Provider, SignInModal
+   ├─ hooks/                   # React hooks that wrap blockchain / API calls
+   ├─ lib/                     # helpers: auth, api, wagmi config, contracts,
+   │                           #   nft generation, contexts, modal store, RPC list
+   └─ data/                    # static data: planets, routes, art configs, textures
+
+
+================================================================================
+5. TECH STACK — WHAT EACH LIBRARY IS FOR
+================================================================================
+(next.config, package.json)
+  * Next.js 16 (App Router)  → framework: file-based routing + server + client
+  * React 19                 → UI library (components, hooks)
+  * TypeScript               → adds types to JavaScript (compile-time safety)
+  * Tailwind CSS v4          → utility CSS classes directly in JSX
+  * three + @react-three/fiber + @react-three/drei
+                             → 3D rendering (WebGL) + React wrapper + helpers
+  * wagmi + viem             → blockchain interaction (wallet, transactions, RPC)
+  * @tanstack/react-query    → server state caching (fetch bookings, metadata)
+  * @resvg/resvg-js          → converts SVG strings to PNG (server side, for NFT)
+  * sharp                    → image processing (dev dependency)
+
+Concept to stress to the professor: the frontend has THREE data sources:
+  1. Static data in src/data (planet catalog, routes, prices, art colors).
+  2. A REST backend (Express + MongoDB) for users, sessions and booking records.
+  3. The Ethereum blockchain (Sepolia) for the NFT and the payment.
+
+
+================================================================================
+6. FILE-BY-FILE / BLOCK-BY-BLOCK EXPLANATION
+================================================================================
+
+--------------------------------------------------------------------
+6.1 CONFIGURATION & ENTRY
+--------------------------------------------------------------------
+
+--- package.json ---
+Lists "scripts": dev / build / start / lint.
+"Dependencies" group: runtime libraries (Next, React, Three, wagmi, viem,
+react-query, resvg).
+"DevDependencies": tools only used while developing/building (TypeScript,
+ESLint, Tailwind, sharp).
+Note: wagmi is at version 3.x, which renamed the old useAccount hook to
+useConnection (see section on hooks / useBuyTicket).
+
+--- tsconfig.json ---
+Key line:  "paths": { "@/*": ["./src/*"] }
+This is why all imports in the code use "@/..." instead of long relative paths.
+"strict": true means TypeScript will complain loudly about types.
+
+--- src/app/globals.css ---
+@import "tailwindcss"  → loads Tailwind v4.
+@layer base: global styles — full-height page, dark background #09090b, and a
+  visible violet :focus-visible outline for keyboard accessibility.
+@layer components: reusable design tokens written as CSS classes:
+  - .glass-card / .glass-card-hover : semi-transparent dark card with blur and
+    a violet border (the "glassmorphism" look used all over the app).
+  - .btn-violet : the signature violet gradient button + hover glow.
+@layer utilities: keyframe animations used by components:
+  modal-fade-in, modal-scale-in, slide-down, slide-in-left, glow-pulse, and a
+  thin scrollbar style. At the bottom, a @media (prefers-reduced-motion) block
+  disables animations for users who prefer less motion (accessibility).
+
+--------------------------------------------------------------------
+6.2 APP PAGES (src/app) — ROUTES OF THE SPA
+--------------------------------------------------------------------
+
+--- src/app/layout.tsx  (Root Layout) ---
+Block 1 — Fonts: loads Geist Sans and Geist Mono from next/font/google and
+  registers them as CSS variables --font-geist-sans / --font-geist-mono.
+Block 2 — metadata export: sets <title> and <description> for SEO.
+Block 3 — RootLayout component: renders <html> and <body> and wraps children
+  in a provider NEST (this order matters):
+    Web3Provider     → wagmi + TanStack Query (wallet + RPC)
+      AuthProvider   → email session state (user, token)
+        LoadingProvider → global full-screen loading overlay
+          NotificationProvider → notifications bell data
+            {children}        → the current page
+  Explanation for professor: providers are React Context providers. Each one
+  makes a piece of global state available to every component below it in the
+  tree. Note: a MobileBottomNav used to be rendered here too; it was removed
+  together with all other mobile-specific UI (see the appendix).
+
+--- src/app/page.tsx  (Route "/" — Explore / Home) ---
+Block 1 — 'use client': this page must run in the browser (it uses hooks and
+  browser-only Three.js), so it is marked a Client Component.
+Block 2 — dynamic import of SolarSystem with { ssr: false }: the 3D scene is
+  loaded only in the browser (WebGL cannot render on the server) and while it
+  loads, a spinner is shown. This is called "lazy loading".
+Block 3 — State: focusedPlanetId, selectedBodyId, selectedMoonId. These
+  control which planet is highlighted and which panels are shown. Also reads
+  useAuth() for the logged-in user.
+Block 4 — Auth guard useEffect: if there is no user (and we are not still
+  checking the session), redirect to /signin. While checking, show a loading
+  screen; if not signed in, render nothing.
+Block 5 — handlePlanetSelect(id): when a planet/moon is clicked, remembers the
+  id; if the chosen body is a moon, also remembers it as selectedMoonId so the
+  3D camera can fly to it.
+Block 6 — isFocused(planetId): tells each planet "are you the focused one?" —
+  true for the selected planet, or for the parent of a selected moon.
+Block 7 — selectedBody / selectedRoute: looks up the chosen body in the
+  catalog and its travel route. Route is null for Earth (id 3, the origin) so
+  no booking panel is shown for Earth.
+Block 8 — Layout JSX: full-height flex column:
+  * <NavBar/> at the top.
+  * Left sidebar: <PlanetMenu> (destination list + search + favorites).
+  * Center: <SolarSystem> — the interactive 3D scene.
+  * Right sidebar: DestinationPanel + RoutePanel + BookTicketButton, or an
+    empty "Explore the Solar System" placeholder when nothing is selected.
+  The layout is a fixed three-column desktop layout. The previous responsive
+  design (mobile 2D list, bottom nav, bottom sheets, floating buttons) was
+  removed; the app now runs on one layout regardless of screen size.
+
+--- src/app/loading.tsx ---
+A tiny component Next.js shows while a route is loading. It simply reuses the
+LoadingScreen component with a default message.
+
+--- src/app/signin/page.tsx ---
+Block 1 — State: isSignUp (toggle), email, password. Reads signIn, signUp,
+  loading, error, user, checkingSession from useAuth().
+Block 2 — Redirect guard: if already signed in, go to "/".
+Block 3 — handleSubmit: typed as (e: SubmitEvent<HTMLFormElement>). It
+  prevents the default form POST, enforces a minimum password length of 8 for
+  sign-up, then calls signUp or signIn from the auth context, and navigates
+  home on success. NOTE: the submit handler is typed with React's SubmitEvent
+  type (the correct type for <form onSubmit>); the old FormEvent type is
+  deprecated in React 19's type definitions and was removed.
+Block 4 — JSX: centered card with the SolarExpressLogo, an email + password
+  form (controlled inputs bound to state), an error banner, a submit button
+  disabled while loading, and a toggle between "Sign In" and "Sign Up".
+
+--- src/app/booking-history/page.tsx  (Route "/my tickets") ---
+This page is a good example of a large page broken into small components.
+Block 1 — Utility helpers:
+  * shorten(s, chars): truncates long strings (addresses) to
+    "ab12...cd34" format.
+  * formatDate(iso): converts an ISO date to a readable "02 Aug 2026".
+  * getBody(id): looks up a body from the catalog.
+  * resolveIPFS(uri): turns "ipfs://<cid>" into a https gateway URL.
+  * NFTMetadata type: shape of on-chain metadata JSON.
+Block 2 — NFTGalleryView: a responsive grid (2/3/4 columns) of clickable
+  ticket cards. Each card renders <NFTTicket compact> (the SVG art) plus the
+  body name, token id, status and date.
+Block 3 — SkeletonBlock: a pulsing placeholder rectangle used while loading.
+Block 4 — NFTDetailModal: a <Modal> showing one ticket enlarged.
+  * useTokenURI(BigInt(tokenId)) reads the NFT's tokenURI from the chain.
+  * useQuery fetches the metadata JSON from the resolved IPFS URI.
+  * If on-chain metadata exists → show the <img>; otherwise fall back to the
+    locally generated <NFTTicket>.
+  * Displays name, description, on-chain attributes, token id, price, mint
+    date, network, transaction hash, wallet, and links to Sepolia Etherscan
+    for the tx and for the NFT page.
+Block 5 — BookingHistoryView: cards showing DB booking details (flight number,
+  reference, departure date/time, seat, class, price, status) with a
+  "View NFT Ticket" button that switches to the gallery modal.
+Block 6 — BookingDetailModal: full booking details + a visual route timeline
+  (Earth → Launch Terminal → Destination) + transaction info.
+Block 7 — MyTicketsPage (main component):
+  * Sources data two ways: useBookingHistory() (DB) and useOnChainBookings()
+    (blockchain, if a wallet is connected). isUsingOnChain picks the source.
+  * mergedBookings (useMemo): if the wallet is connected, converts each
+    on-chain booking into a BookingRecord, joining with the matching DB record
+    (hasBackendRecord) when one exists; otherwise simply returns DB records.
+  * Handles: loading spinner, error card (with Retry / Connect Wallet),
+    empty state, tab switching between gallery and history, and two modals.
+  * Auth guard: if not signed in AND no wallet, show an inline "Connect
+    Wallet / Sign In" prompt instead of redirecting (wallet users can use the
+    app without an account).
+
+--- src/app/faq/page.tsx ---
+Block 1 — FAQ_ITEMS data: a nested array of categories each with a list of
+  {q, a} objects (Booking, Blockchain, Payments, NFT Tickets, Wallet, Travel).
+  No backend call — the FAQ is static data.
+Block 2 — FAQPage: auth guard, then maps over FAQ_ITEMS and renders native
+  HTML <details>/<summary> elements for expandable/collapsible answers, with a
+  chevron that rotates when open. (The footer link to /about was removed
+  together with the About page.)
+
+--------------------------------------------------------------------
+6.3 REUSABLE UI COMPONENTS (src/components)
+--------------------------------------------------------------------
+
+--- components/layout/NavBar.tsx ---
+Block 1 — NAV_ITEMS: the three main links and their paths (Explore, My
+  Tickets, FAQ). The previous fourth item (About) was removed with the page.
+Block 2 — NavBar component reads usePathname() (to highlight the active item),
+  useAuth(), useConnection() (wallet), useConnect/useDisconnect, and
+  useNotifications().
+Block 3 — Outside-click handler: a window "mousedown" listener that closes the
+  notification and profile dropdowns when the user clicks elsewhere.
+Block 4 — Header JSX:
+  * Left: logo + horizontal nav.
+  * Right: notification bell with an unread-count badge and a dropdown list of
+    the latest 20 notifications, each with a colored dot by type and
+    Mark-read / dismiss-promotion actions.
+  * Profile menu: if logged in, shows an avatar circle with the first letter
+    of the email; the dropdown shows the email, wallet address (shortened),
+    and buttons to Disconnect/Connect Wallet and Sign Out.
+  * If not logged in: a "Connect Wallet" button (or "Sign In" if a wallet is
+    already connected).
+
+--- components/menu/PlanetMenu.tsx ---
+Block 1 — Props: onPlanetSelect, selectedBodyId.
+Block 2 — State: search text, expanded set of planet ids, favorites list.
+Block 3 — Derived data: planets and allMoons from the catalog; filteredPlanets
+  and filteredMoons respect the search query (a planet matches if its own name
+  or any of its moons match).
+Block 4 — toggleExpand / toggleFavorite: update the Set / array immutably.
+Block 5 — JSX:
+  * A search input with a magnifier icon.
+  * A "Favorites" section (shown only when not searching) listing starred
+    bodies; each row is a keyboard-accessible button (role="button" + onKeyDown
+    handling Enter/Space) with a star toggle that stops propagation.
+  * The "Destinations" list: each planet row toggles its moon list open and
+    selects the planet. Planet id 3 (Earth) is rendered greyed (disabledRoute)
+    because you cannot book a trip to Earth. Moons are indented rows.
+
+--- components/panel/DestinationPanel.tsx ---
+Given selectedBodyId, looks up the body and its route and renders a "glass
+card" with: color dot + name + type, description, distance (AU), travel time,
+launch terminal, launch time, and price. Returns null if nothing is selected.
+
+--- components/panel/RoutePanel.tsx ---
+Renders the route as a mini timeline: Earth → launch terminal → destination,
+with distance and duration at the bottom. Returns null for no selection and
+for Earth (id 3).
+
+--- components/panel/BookTicketButton.tsx  (the heart of the booking flow) ---
+This is the biggest component. Read it as several blocks:
+Block 1 — Types/constants: WizardStep union lists the 9 wizard screens;
+  STEP_LABELS and WIZARD_ORDER give each step a title and an order.
+Block 2 — BookingProgress: a small sub-component rendering a dot track
+  (completed = green check, current = violet number, future = grey number)
+  with chevrons between dots and the current step label underneath.
+Block 3 — Component state: isConnected/address (wagmi), user (auth),
+  useBuyTicket() (the blockchain hook), useSyncBooking() (DB mutation),
+  useQueryClient() (to invalidate cached queries after a booking), plus local
+  state for the wizard step, departure date, availability check, class,
+  agreement checkbox, DB sync status, and flightDetails.
+Block 4 — Derived values: the selected body and route, the class-adjusted
+  price (getClassPriceEth), and generated flight data (flight number, seat,
+  terminal, booking reference) created when the wizard opens.
+Block 5 — Step navigation: goToStep / nextStep move through WIZARD_ORDER.
+Block 6 — handleOpenWizard: resets all state and generates new flight details.
+  handleCloseWizard: closes and resets the transaction state.
+Block 7 — handleCheckAvailability: fakes a network delay (1.5–2.5 s) then
+  marks availability as checked and advances the step (simulated data: the
+  wizard shows "43 / 120 seats").
+Block 8 — Blockchain sync effects:
+  * While txStep === 'confirming', after 8 s it calls checkReceipt() from the
+    hook (a manual re-read of the transaction receipt as a fallback).
+  * When txStep becomes 'success' (NFT minted), it fires syncMutation.mutate
+    to POST the booking to the backend, then invalidates the react-query caches
+    (booking-history, bookings, nfts) so the tickets page refreshes. triggeredRef
+    prevents this from running twice.
+Block 9 — handleRetrySync: re-runs the DB sync if it previously failed (the
+  NFT is already on-chain, so a retry just records it in the database).
+Block 10 — The button: disabled when no wallet is connected; label shows
+  "Connect wallet to book" or "Book Now — X ETH".
+Block 11 — Wizard modal (createPortal to document.body so it renders on top of
+  everything). Content switches on wizardStep:
+  * travel-info: destination card (name, type, description, route, distance,
+    travel time, terminal, price).
+  * departure-date: a native <input type="date"> with a min date of today;
+    shows the formatted departure when chosen.
+  * availability: "Checking launch availability..." spinner.
+  * flight: a flight summary card (flight number, route, departure/arrival,
+    terminal, seats remaining 43/120, "Available" badge).
+  * passenger-class: radio-style buttons built from PASSENGER_CLASSES; the
+    "first" class is disabled (available: false).
+  * agreement: a bulleted terms card + a required checkbox.
+  * review: a full summary table of the booking (destination, route, dates,
+    times, flight, class, seat, reference, wallet, price, network, terminal).
+  * payment: renders one status card depending on the transaction step from
+    useBuyTicket (preparing → violet spinner; pending → amber "Waiting for
+    MetaMask..."; broadcasting → violet; confirming → purple + Etherscan link;
+    success → green; error → red with a friendly formatted message and
+    "Back to review"). Also shows "Saving booking to database..." while the DB
+    sync runs, and an amber "retry sync" card if the DB save failed.
+  * confirmation: success header, the minted <NFTTicket>, booking summary,
+    Etherscan link, "Go to My Tickets" and "Book Another Flight" actions.
+  Note: the confirmation with dbStatus error shows a "NFT Minted — Sync
+  Pending" screen.
+Block 12 — Sticky bottom action bar: one button whose label and action depend
+  on the current step, with disabled states (no date / no agreement / no
+  wallet). On the review step, pressing it calls buyTicket(...) which starts
+  the blockchain transaction.
+Block 13 — formatError(err): converts raw wallet errors to friendly messages
+  (cancelled / insufficient funds / wrong network) and truncates long ones.
+
+--- components/scene/SolarSystem.tsx  (the 3D view) ---
+Block 1 — MOON_CONFIG: per-moon visual data (color, size, orbit radius,
+  roughness) used to place and style moons around their parent planet.
+Block 2 — getPlanetPosition(planets, id): distributes planets evenly around
+  the Sun — angle = index * 2π / count, distance = 5 + index * 3. Planets are
+  static; only the camera moves.
+Block 3 — getMoonWorldPosition: computes a moon's position at time `time` as
+  the parent's position plus a circular orbit (radius from MOON_CONFIG).
+Block 4 — CameraAnimator: when focusedPlanetId/selectedMoonId changes, it
+  captures the camera's current position+target, computes the end position
+  (offset 3 units away), and lerps between them with a smooth ease
+  (t = 0.5 - cos(π·p)/2) every animation frame until progress reaches 1.
+Block 5 — MoonRenderer: renders a moon (via PlanetRenderer) plus a label,
+  updating its position every frame with useFrame.
+Block 6 — MoonLabel / TimeTracker: label uses <Html> from drei to place an
+  HTML div in 3D space; TimeTracker simply accumulates elapsed time in a ref.
+Block 7 — Main SolarSystem component:
+  * <Canvas> is the react-three-fiber renderer with an initial camera position
+    [10,10,10] and fov 45.
+  * Lights: ambient + directional (warm white) + hemisphere for a nice mix.
+  * <Sun/>, <Stars count={3000}/>.
+  * Planets mapped into <Planet> at computed positions with an onClick.
+  * The selected moon is rendered (only its own moon, to keep it light).
+  * CameraAnimator + OrbitControls (damped, no pan, zoom 3–50).
+
+--- components/scene/Planet.tsx ---
+Wraps a single planet/moon in a <group> with position/scale.
+  * scale = 1.4 when focused (the "zoom highlight").
+  * For Earth (id 3) it renders the special <Earth> component.
+  * Otherwise renders <PlanetRenderer bodyId size>.
+  * Shows a name label with <Html> unless a modal is open — the label uses
+    useSyncExternalStore to read the shared modal-store (see lib/modal-store)
+    so labels hide while the booking wizard is up.
+
+--- components/scene/Sun.tsx ---
+Procedurally generates a 1024×512 sun texture on a <canvas> using a custom
+hash → smoothstep noise → fbm (fractal Brownian motion) stack:
+  * Three noise octaves (large/medium/fine) are blended into "surface".
+  * "active" regions (bright patches) and "lanes" (darkening between
+    granulation cells) modulate the color.
+  * Limb darkening is baked in (edges slightly darker).
+The texture becomes a THREE.CanvasTexture mapped onto a sphere with an
+emissive orange material. useFrame slowly rotates it.
+
+--- components/scene/Earth.tsx ---
+A multi-layer Earth built for teaching and impressiveness:
+  * configureTexture: helper setting sRGB color space and mipmaps.
+  * Procedural cloud texture: same hash/fbm noise technique, distorted by
+    rotational noise to create swirling clouds, plus a tropical band (ITCZ)
+    and mid-latitude storm tracks; result is a grayscale canvas where alpha =
+    cloud coverage.
+  * Two GLSL shaders (written as template strings):
+      - ATMO_VS/ATMO_FS: atmosphere rim glow — Fresnel term
+        (1 - dot(normal, viewDir)) raised to a power, tinted blue, additive
+        blended on a slightly bigger sphere rendered from the back side.
+      - NIGHT_VS/NIGHT_FS: night city lights — samples the night texture and
+        fades it in only on the dark side using dot(normal, sunDir).
+  * EarthLayers: loads 4 textures (day, bump, night, specular) from /public
+    with useLoader, then stacks: PBR day sphere, additive night-lights mesh,
+    rotating procedural cloud sphere (slightly larger, transparent), and the
+    atmosphere shell. Cloud sphere rotates every frame.
+  * Suspense + EarthFallback: while textures load, show a simple blue sphere.
+
+--- components/scene/PlanetRenderer.tsx  (3D version) ---
+A generic 3D planet renderer driven by a per-body config:
+  * Same hash/smoothN/fbm noise helpers used by the Sun and Earth.
+  * Procedural texture generators for moons that have no photo textures:
+    generateMoonTexture (base + craters + optional dark patches),
+    generateIoTexture (sulfur yellow + dark volcanic spots),
+    generateEuropaTexture (ice blue + brown cracks),
+    generateEnceladusTexture (bright ice + south-pole stripes),
+    generateTitanTexture (orange haze), generateTritonTexture (pink + polar
+    caps), generateGenericCratered (generic cratered rock), and
+    generateSaturnRingTexture (rings with the Cassini gaps as Gaussian dips in
+    alpha).
+  * BODY_CONFIGS maps each body id to its settings: texture path (from
+    /public/textures) or procedural type, roughness/metalness, and optional
+    atmosphere (color, intensity, power, scale) or ring.
+  * PlanetLayers: loads the texture(s) with useLoader (or generates the
+    procedural canvas), builds a sphere geometry, applies meshStandardMaterial,
+    adds the atmosphere shader shell if configured, and SaturnRing if ring.
+  * SaturnRing: procedural ring texture on a RingGeometry rotated to the
+    orbital plane, plus a faint shadow disc.
+  * Suspense fallback: PlanetFallback (plain coloured sphere) while loading.
+
+--- components/nft/NFTTicket.tsx  (on-screen SVG ticket) ---
+Renders the NFT ticket as an inline React <svg> (viewBox 340×540, scalable).
+  * Gets body + art config; useId() creates unique gradient ids per instance
+    (so multiple tickets on one page never clash).
+  * defs: background, panel, planet, glow and shadow gradients, a clip path
+    for the planet, and the "SolarExpress" logo gradient/filter.
+  * Draws: rounded background rect → star field (STAR_POSITIONS scaled into
+    the 340×540 space) → ticket panel rect → "SOLAREXPRESS" / "ERC-721" text →
+    the planet (via the SVG <PlanetRenderer>) → orbit ellipse → destination
+    name + "PLANET"/"MOON" → divider → TOKEN / PRICE / NETWORK row → wallet
+    address (shortened) → green "NFT MINTED" badge → the logo watermark.
+  * compact prop changes the display size (340×540 vs 700×1100).
+
+--- components/nft/PlanetRenderer.tsx  (SVG version) ---
+The 2D/SVG counterpart of the 3D renderer. Given textureType and colors, it
+draws the matching planet texture using SVG primitives:
+  * Outer glow circle, base circle, shadow overlay.
+  * One sub-renderer per texture type:
+      RockyTextures (craters + noise dots), MartianTextures (polar caps,
+      highlands, volcano region, Valles Marineris canyon), GasGiantTextures
+      (horizontal colored bands, turbulence ellipses, Great Red Spot),
+      IceGiantTextures (faint bands + rim), IcyTextures (cracks),
+      VolcanicTextures (lava flows + vents + sulfur spots), HazyTextures
+      (cloud swirls + atmosphere rims), EarthTextures (continent paths for
+      5 continents, clouds, polar caps, atmosphere glow), CrateredTextures.
+  All coordinates are computed relative to center (cx,cy) and radius r with a
+  scale factor s = r/140 so the same code works at any size.
+  NOTE: this file is used by NFTTicket.tsx; it shares the art concepts with
+  lib/generate-nft-svg.ts which produces the same artwork as a string for the
+  server to rasterize into a PNG.
+
+--- components/ui/LoadingScreen.tsx ---
+Block 1 — LoadingSpinner: the animated "planet orbiting the sun" logo as an
+  SVG with inline <style> keyframes (orbit rotation, sun pulse) injected via a
+  <style> tag. A prefers-reduced-motion media query disables the animation.
+Block 2 — LoadingScreen (default export): a full-screen overlay. It waits one
+  requestAnimationFrame before showing (so it doesn't flash on fast loads),
+  renders the large spinner + a message, and is marked role="status" with
+  aria-live="polite" for screen readers.
+
+--- components/ui/Modal.tsx ---
+A reusable modal dialog.
+  * Uses createPortal to document.body so it overlays the app.
+  * useEffect sets the global modal-store flag when open/close (so 3D labels
+    can hide themselves).
+  * Escape key closes the modal; clicking the overlay (exactly the overlay,
+    not children) closes it; a close "✕" button is provided.
+  * useSyncExternalStore with a (() => {}) subscribe and getServerSnapshot
+    false ensures it only renders on the client (no SSR flash).
+
+--- components/ui/SolarExpressLogo.tsx ---
+The brand logo as an SVG. SIZE_MAP maps 'sm'|'md'|'lg'|'xl' to pixel sizes, or
+accepts a raw number. The SVG draws a rounded dark square, a glowing sun, an
+orbit ellipse and a small "rocket" glyph group.
+
+--- components/wallet/Web3Provider.tsx ---
+Tiny component that sets up the global wallet/query infrastructure:
+  * QueryClient is created once with useState(() => new QueryClient()).
+  * Renders <WagmiProvider config={config}><QueryClientProvider client=...>.
+  Every page therefore has access to wagmi hooks and TanStack Query.
+
+--- components/wallet/SignInModal.tsx ---
+A <Modal> that provides the same sign in/up form as the /signin page, but as
+an overlay. Uses useAuth(); on submit calls signUp/signIn and closes. (Used
+wherever a quick sign-in without leaving the page is needed.)
+
+--------------------------------------------------------------------
+6.4 HOOKS (src/hooks)
+--------------------------------------------------------------------
+
+--- hooks/useBuyTicket.ts  (the blockchain payment hook) ---
+This hook encapsulates the whole "send money + mint NFT" process.
+Block 1 — Constants: TX_HASH_KEY (sessionStorage key) and a minimal
+  baseTokenURI ABI fragment to read the NFT's base URI.
+Block 2 — warmNftCache(tokenId): after minting, pre-fetches the token's
+  metadata/image URLs so CDN/edge caches and NFT crawlers get a fast response.
+Block 3 — Types: TicketStep (idle/preparing/pending/broadcasting/confirming/
+  success/error) and BuyTicketResult.
+Block 4 — State: manualReceipt & manualTokenId (set when the receipt is
+  re-read manually as a fallback), restoredHash (a pending tx hash recovered
+  from sessionStorage after a page refresh), writeError, checkingRef (guards
+  against double checks), and purchaseRef (remembers destination/price/class
+  for the metadata step).
+Block 5 — wagmi hooks:
+  * useWriteContract() twice — one for buyTicket, one for setTokenURI.
+  * useAccount() → connectedAddress (the connected wallet).
+  * useSwitchChain() + useChainId() to ensure we are on Sepolia.
+  * useWaitForTransactionReceipt({ hash: activeHash }) — Reactively watches
+    the transaction until it is mined.
+  activeHash = txHash || restoredHash, so a refresh mid-transaction resumes
+  monitoring.
+Block 6 — resolvedIsConfirmed / resolvedTokenId: combines the wagmi receipt
+  with the manual fallback; extractTokenId decodes the TicketPurchased event
+  from the receipt logs to learn the token id.
+Block 7 — checkReceipt(): manual fallback — creates a public viem client with
+  a fallback transport (list of Sepolia RPCs), calls getTransactionReceipt,
+  and if successful saves the receipt + token id and clears the stored hash.
+Block 8 — Effects:
+  * Persists any active hash to sessionStorage (crash recovery).
+  * When confirmed, if metadata generation succeeds (IPFS), calls setTokenURI
+    to attach on-chain metadata to the NFT; otherwise falls back to
+    warmNftCache. Errors are logged with console.warn (the UI keeps working).
+Block 9 — buyTicket(destinationId, priceEth, travelClass):
+  resets state, stores the purchase in purchaseRef, switches to Sepolia if
+  needed, and calls writeContractAsync with:
+    address: TICKET_SALE_ADDRESS, functionName: 'buyTicket',
+    args: [destinationId, classId], value: parseEther(priceEth),
+    gas: 500_000n.
+  Class ids: economy=0, business=1, first=2. Errors are caught into writeError.
+Block 10 — step computation: a chain of if/else turns the raw flags into one
+  of the TicketStep values (e.g. isPending → 'pending',
+  activeHash && confirming && !confirmed → 'confirming', ...).
+Block 11 — Return value: buyTicket, step, txHash, tokenId, error, writeError,
+  reset, checkReceipt — everything the wizard needs.
+NOTE on useAccount: wagmi 3.x renamed this hook to useConnection; useAccount
+still exists as a deprecated alias. The other hooks in this project already
+use useConnection.
+
+--- hooks/useBookingHistory.ts ---
+Thin wrapper around TanStack Query: useQuery with queryKey ['booking-history'],
+staleTime 15 s, 2 retries. `enabled` lets the caller decide when to run
+(e.g. only when a user is signed in).
+
+--- hooks/useOnChainBookings.ts ---
+Reads the user's bookings from the blockchain:
+  * useAccount() to get the wallet address.
+  * useReadContract(BOOKING_HISTORY_ADDRESS, 'getBookings', [address]) enabled
+    only when connected. Returns the on-chain booking list (ticketId,
+    destinationId, pricePaid, timestamp) plus loading/error/refetch.
+
+--- hooks/useSyncBooking.ts ---
+Wraps the POST to the backend in a TanStack useMutation. Used by
+BookTicketButton after an NFT is minted to persist the booking record.
+
+--- hooks/useTicketInfo.ts ---
+Four tiny wagmi read hooks for the NFT contract: useTicketData (tickets()),
+useOwnerOf, useTokenURI, useBalanceOf. Each returns data + loading/error and
+logs RPC errors. useEnabled() ensures calls only run when a wallet is
+connected.
+
+--------------------------------------------------------------------
+6.5 DATA & BUSINESS LOGIC (src/data)
+--------------------------------------------------------------------
+
+--- data/bodies.ts ---
+The destination catalog. The Body type defines each entry; `bodies` is an
+array of 20 entries (Mercury → Pluto, plus 10 moons). Each entry has an id,
+name, type (planet/moon), parentPlanetId (for moons), priceEth (string price),
+description and color. Distance values are illustrative (rounded real
+astronomical distances).
+
+--- data/travel.ts ---
+Business logic for routes and booking details.
+  * getClassPriceEth: business class = 2.5× the base price (computed with viem
+    parseEther/formatEther to avoid floating point errors).
+  * LAUNCH_TIMES, TERMINALS, DISTANCES_AU, TRAVEL_DAYS: lookup tables keyed by
+    destination id (simulated schedule data).
+  * getTravelRoute(id): builds a TravelRoute {origin 'Earth', destination,
+    distanceAU, estimatedTravelDays, launchTerminal, launchTimeUTC,
+    flightNumber SX<id padded>}. Returns null for Earth.
+  * generateBookingReference: random 6-char code with an unambiguous alphabet.
+  * PASSENGER_CLASSES: economy & business available, first disabled.
+  * getLaunchTime/getLaunchTerminal/getDistanceAU/getTravelDays: convenience
+    getters.
+  * generateFlightDetails(id): returns flight number, booking reference,
+    tomorrow's date, launch time, terminal, and a random seat like "12C".
+
+--- data/nft-art.ts ---
+Defines the visual identity of each NFT ticket.
+  * PlanetTextureType: the 9 supported art styles.
+  * NFTArtConfig type and artConfigs: per-body palettes — planet gradient,
+    glow color, background gradient, accent color, orbit color, tagline,
+    texture type, plus optional atmosphere/spot/band colors.
+  * getNFTArtConfig(bodyId) / getNFTArtDescription(bodyId): accessors.
+  * STAR_POSITIONS: fixed star coordinates reused by both the React SVG ticket
+    and the server-side SVG generator (keeps art consistent everywhere).
+
+--- data/textures.ts ---
+A library of procedural canvas texture generators for the 3D scene
+(gas giant bands, Mercury/Venus/Mars/Pluto/Luna/Callisto/Io/Europa/Enceladus/
+generic rocky). Each uses the same hash/smoothNoise/fbm pattern. getPlanetTexture
+caches textures by body id. NOTE: the live 3D scene actually uses the texture
+generators inside components/scene/PlanetRenderer.tsx; this file is the older
+"reference" implementation of the same idea.
+
+--------------------------------------------------------------------
+6.6 INFRASTRUCTURE HELPERS (src/lib)
+--------------------------------------------------------------------
+
+--- lib/auth-context.tsx ---
+React Context that manages the email session.
+  * State: user, token, loading, checkingSession, error.
+  * refreshUser + an effect on mount: GET /api/auth/me with credentials
+    'include' (cookies) to restore the session.
+  * handleAuth(endpoint, email, password): POST /api/auth/login or /signup,
+    sets user (and stores the JWT in the shared api.ts module) on success.
+  * signOut: POST /api/auth/logout then clears all local state.
+  * useAuth(): consumer hook that throws if used outside the provider.
+  Note: token is also kept in a module variable in api.ts so plain fetch
+  helpers can attach the Authorization: Bearer header.
+
+--- lib/api.ts ---
+The frontend's API client for the backend.
+  * Types SyncBookingPayload and BookingRecord (mirrors the backend schema).
+  * setAuthToken stores the JWT; authFetch attaches the Bearer header and
+    always sends credentials (cookies).
+  * syncBooking(payload): POST /api/bookings (used after minting).
+  * fetchBookingHistory(): GET /api/bookings/history with a 15 s abort
+    timeout; throws a friendly timeout message on AbortError.
+
+--- lib/backend-url.ts ---
+Resolves the backend base URL from env vars with a localhost:4000 fallback,
+and builds full API paths (getApiBaseUrl('/api/auth') etc.).
+
+--- lib/wagmi-config.ts ---
+Creates the wagmi config: chain Sepolia, connector `injected()` (MetaMask and
+other injected wallets), and a fallback transport made from SEPOLIA_RPC_URLS.
+The `declare module 'wagmi'` block registers the config type globally.
+
+--- lib/contract.ts ---
+Central place for on-chain data:
+  * Three contract addresses (env-overridable, with hardcoded fallbacks).
+  * TICKET_SALE_ABI, TICKET_NFT_ABI, BOOKING_HISTORY_ABI — the full ABIs
+    (function signatures, events, errors) written as `as const` arrays so
+    TypeScript can infer exact argument types for every call.
+  Everything else in the app imports these instead of hardcoding strings.
+
+--- lib/rpc.ts ---
+A list of public Sepolia RPC endpoints (ordered by reliability) with an
+optional paid key appended from env. .filter(Boolean) removes the undefined
+entry. Used by both the client (wagmi config) and server (NFT routes).
+
+--- lib/modal-store.ts ---
+A tiny external store (no React) used to broadcast "is any modal open?"
+  * Module-level boolean + a Set of listener functions.
+  * getIsModalOpen reads it; setIsModalOpen updates it and notifies listeners;
+  * subscribe registers a listener and returns an unsubscribe function.
+  This lets non-React-rendered 3D labels (three.js <Html>) read state via
+  useSyncExternalStore without prop drilling.
+
+--- lib/notification-context.tsx ---
+Provides notifications state.
+  * Fetches /api/notifications whenever the user changes.
+  * unreadCount = notifications that are neither read nor dismissed.
+  * markRead / markAllRead / dismissPromotion call the backend (PATCH) and
+    optimistically update local state.
+  Note: /api/notifications is served by the backend on localhost:4000 — the
+  fetch uses a relative URL because the browser proxies it (see config) or the
+  backend serves it directly in the dev setup.
+
+--- lib/loading-context.tsx ---
+A global loading overlay controller. setLoading(true/false, message?) toggles
+the <LoadingScreen> rendered inside the provider. Built but used lightly (the
+pages mostly render their own LoadingScreen).
+
+--- lib/nft-service.ts ---
+Client helper generateNFTMetadata(...): POSTs to /api/nft/generate-metadata
+with an AbortController timeout of 90 s. Returns { success, metadataUri,
+imageCid, predictedTokenId }.
+
+--- lib/generate-nft-svg.ts ---
+THE server-side twin of components/nft/NFTTicket.tsx. generateNFTTicketSVG()
+returns the ticket as an SVG *string* (so the server can rasterize it to PNG).
+  * Same layout/coordinates as the React version (background, stars, panel,
+    texts, wallet, badge).
+  * generatePlanetSVG(textureType, art, uid): builds the same planet artwork
+    as the React SVG PlanetRenderer, but as an HTML string.
+  * escapeXml: sanitizes user-derived strings embedded in the SVG.
+  Keep this in mind: NFTTicket.tsx (React) and this file (string) are the two
+  implementations of the same design; the server uses the string version.
+
+--- lib/nft-ticket-data.ts ---
+Server helper that reconstructs a ticket's data from the chain:
+  * createClient(): viem public client with the RPC fallback list.
+  * findMintBlock(): binary-searches blocks to find the one whose timestamp
+    matches the mint time (because getLogs ranges are capped by many RPCs).
+  * getTicketPriceEth(): reads the TicketPurchased log near the mint block to
+    find the exact price paid, with a retry.
+  * getClassPrices() + inferPassengerClass(): reads the sale contract's
+    authoritative per-class prices to infer the passenger class from the paid
+    amount; getFallbackPrices mirrors app pricing (economy = price,
+    business = 2.5×) as a fallback.
+  * findTicketData(tokenId): cached (60 s) lookup that reads tickets(),
+    ownerOf() and saleContract() from the NFT contract, then price+class.
+    Used by the /api/nft/metadata and /api/nft/image routes.
+
+--------------------------------------------------------------------
+6.7 NFT API ROUTES (server side — they power the frontend's NFTs)
+--------------------------------------------------------------------
+These live in src/app/api and run on the Next.js server.
+
+--- app/api/nft/generate-metadata/route.tsx ---
+POST endpoint called by useBuyTicket after a successful mint.
+  * predictNextTokenId(): scans recent TicketPurchased logs (in 30k-block
+    chunks, with timeouts) and returns max tokenId + 1 — used as a fallback
+    prediction when the client doesn't pass a token id.
+  * rasterizePng(): uses @resvg/resvg-js to turn the SVG string into PNG,
+    loading the bundled Roboto fonts (loadSystemFonts: false for consistency).
+  * uploadImageToPinata() / uploadMetadataToPinata(): uploads the PNG and the
+    JSON metadata (name, description, image, attributes) to IPFS via Pinata,
+    using PINATA_JWT.
+  * POST handler: validates destinationId/priceEth, resolves the token id,
+    generates the SVG, and uploads both files; returns the ipfs:// metadata
+    URI. This URI is then written on-chain by useBuyTicket via setTokenURI.
+
+--- app/api/nft/image/[tokenId]/route.ts ---
+GET endpoint that serves the NFT artwork as a PNG.
+  * Parses tokenId, calls findTicketData(tokenId) to fetch on-chain data
+    (destination, price, owner, class), regenerates the SVG, rasterizes it.
+  * Sets Cache-Control so healthy responses are cached for a day, but
+    degraded ones (price could not be read → '0') only for 60 s, so a later
+    fetch can fix them.
+
+--- app/api/nft/metadata/[tokenId]/route.ts ---
+GET endpoint serving the ERC-721 metadata JSON that wallet/explorers read.
+  * Validates tokenId format, uses a short in-memory cache (60 s TTL).
+  * Builds the metadata with image pointing at /api/nft/image/<tokenId>?v=3,
+    attributes (Destination, Passenger Class, Token ID, Network, Price).
+  * Degraded responses (no on-chain price) are not cached and use no-store.
+
+
+================================================================================
+7. HOW THE BOOKING FLOW WORKS END-TO-END (FOR THE PROFESSOR)
+================================================================================
+1. User signs in (email/JWT) or connects a wallet. [auth-context + wagmi]
+2. User clicks a planet/moon in the 3D scene or menu. [page.tsx, PlanetMenu]
+   → the right panel shows DestinationPanel, RoutePanel, BookTicketButton.
+3. "Book Now — X ETH" opens the wizard. [BookTicketButton]
+   Steps: travel info → departure date → availability (simulated) → flight →
+   passenger class → agreement → review → payment → confirmation.
+4. On "Confirm & Pay", buyTicket() is called. [useBuyTicket]
+   - Ensures the chain is Sepolia (switches if needed).
+   - writeContractAsync calls buyTicket on the sale contract with value ETH.
+   - MetaMask pops up for the user to approve.
+5. The transaction is mined; useWaitForTransactionReceipt detects it.
+   - The token id is decoded from the TicketPurchased event log.
+   - The receipt is also manually re-checked after 8 s as a fallback.
+   - A sessionStorage hash lets the flow survive a page refresh.
+6. The hook POSTs to /api/nft/generate-metadata to create the NFT art + JSON
+   on IPFS (Pinata), then calls setTokenURI on the NFT contract to attach the
+   metadata on-chain. If IPFS fails, it just warms the CDN cache instead.
+7. BookTicketButton syncs the booking to the backend DB via useSyncBooking,
+   then invalidates react-query caches so My Tickets refreshes.
+8. My Tickets shows the ticket from either the DB or the chain. [booking-history]
+
+
+================================================================================
+8. HOW THE 3D SOLAR SYSTEM WORKS
+================================================================================
+* react-three-fiber (R3F) maps React components to Three.js objects inside
+  a <Canvas> (WebGL context).
+* Each planet = <Planet> → <PlanetRenderer> which builds a sphere with a
+  photo texture (public/textures) or a procedurally generated canvas texture.
+* Earth is special: 4 layered meshes (PBR day surface, night lights shader,
+  rotating procedural clouds, atmosphere fresnel shader).
+* The Sun and clouds are generated on <canvas> using fractal noise (fbm) —
+  hash → bilinear/smoothstep interpolation → summed octaves.
+* Moons orbit their parent every frame via useFrame; the camera animates
+  smoothly to a focused planet/moon via lerp easing.
+* OrbitControls (drei) give the user free orbit/zoom.
+* Only the selected moon is rendered to keep performance reasonable.
+
+
+================================================================================
+9. KEY TALKING POINTS / LIKELY PROFESSOR QUESTIONS
+================================================================================
+Q: Why 'use client' at the top of files?
+A: Next.js App Router pages are Server Components by default. Anything using
+   browser APIs, React state/effects, or WebGL must be marked 'use client' so
+   it renders in the browser.
+
+Q: Why is the 3D scene loaded with dynamic(() => ..., { ssr: false })?
+A: Three.js/WebGL cannot render on the server. Lazy loading also improves the
+   initial page load (code-splitting).
+
+Q: Why two implementations of the same ticket art (React SVG vs string SVG)?
+A: The React component (NFTTicket.tsx) is for displaying the ticket in the
+   UI. The string generator (generate-nft-svg.ts) runs on the server to create
+   the actual PNG that lives on IPFS — the same artwork, one source of
+   coordinates, two outputs.
+
+Q: How do you ensure you are on the right network?
+A: wagmi's useChainId + useSwitchChain: the code checks activeChainId against
+   sepolia.id and calls switchChainAsync before sending the transaction.
+
+Q: What if the user closes the browser mid-transaction?
+A: The transaction hash is persisted to sessionStorage and restored on reload;
+   useWaitForTransactionReceipt + a manual checkReceipt fallback keep the flow
+   alive, so the confirmation screen still appears.
+
+Q: Where does the booking data come from — DB or blockchain?
+A: Both. The blockchain is the source of truth for the NFT and payment; the
+   backend DB stores richer booking details (flight, seat, reference, date).
+   My Tickets merges the two (on-chain bookings joined with DB records).
+
+Q: How is state shared between components?
+A: React Context (auth, notifications, loading), TanStack Query (server data),
+   and a tiny external store (modal-store) read via useSyncExternalStore.
+
+Q: Why did you remove the mobile view and the About page?
+A: The app now ships a single desktop-oriented three-column layout
+   (menu + 3D scene + booking panel). The mobile-only UI — a 2D planet list
+   (MobileExploreView), a bottom navigation bar (MobileBottomNav), a
+   mobile planet drawer and bottom-sheet booking panel — and the
+   mobile-detection hook (useMobile) were deleted along with the static
+   /about info page. This simplifies the codebase: one layout, fewer
+   components, less responsive-class complexity.
+
+Q: Security/robustness points you can mention:
+   - No secrets in the client (contract addresses & RPC URLs are public by
+     nature; PINATA_JWT is server-side only).
+   - escapeXml sanitizes dynamic text embedded in generated SVG.
+   - fetch timeouts (AbortController) prevent hanging requests.
+   - Manual transaction-receipt fallback and IPFS-failure fallback (CDN warm).
+   - prefers-reduced-motion support and aria/role attributes for accessibility.
+
+
+================================================================================
+10. QUICK REFERENCE: GLOSSARY
+================================================================================
+  ABI        — JSON description of a smart contract's functions/events.
+  AU         — Astronomical Unit, the Sun–Earth distance (used for distances).
+  ERC-721    — Ethereum standard for non-fungible tokens (NFTs).
+  IPFS       — Peer-to-peer storage; content is addressed by a CID (ipfs://).
+  JWT        — JSON Web Token; the auth token sent in the Authorization header.
+  Mint       — The on-chain act of creating a new NFT.
+  RPC        — Remote Procedure Call; the API used to talk to the blockchain.
+  Sepolia    — A public Ethereum test network (uses fake/test ETH).
+  Sepolia Etherscan — Block explorer for verifying transactions on Sepolia.
+  SubmitEvent — React's type for a <form> submit handler (onSubmit).
+  wagmi      — React hooks for wallet connection + contract calls.
+  viem       — Type-safe TypeScript library for reading/writing the chain.
+  TanStack Query — Caching library for server state (useQuery/useMutation).
+  useFrame   — R3F hook that runs logic every animation frame.
+  fbm        — Fractal Brownian Motion: layered noise for realistic textures.
+  Fresnel    — Optics effect where light is stronger at grazing angles; used
+               to fake atmospheric rim glow.
+
+
+================================================================================
+APPENDIX — RECENT CHANGES (why this UPDATED edition differs from the old one)
+================================================================================
+1. Removed the mobile view.
+   Deleted files:
+     - src/components/layout/MobileBottomNav.tsx  (bottom nav for phones)
+     - src/components/panel/MobileExploreView.tsx (2D planet list for phones)
+     - src/lib/useMobile.ts                       (mobile-detection hook)
+   Changed files:
+     - src/app/page.tsx  → now a fixed desktop layout only: left PlanetMenu
+       sidebar, center 3D <SolarSystem>, right booking panel. Removed the
+       mobile planet-menu drawer, the floating panel button and the bottom
+       sheet, plus the menuOpen/panelOpen state and useMobile().
+     - src/app/layout.tsx → removed <MobileBottomNav/> from the provider nest.
+
+2. Removed the About page.
+   Deleted files:
+     - src/app/about/page.tsx  (route /about)
+   Changed files:
+     - src/components/layout/NavBar.tsx → NAV_ITEMS now has three links
+       (Explore, My Tickets, FAQ); the About entry was dropped.
+     - src/app/faq/page.tsx → removed the "Learn more about SolarExpress"
+       footer link that pointed at /about.
+
+3. Fixed the deprecated event type in the sign-in page.
+   src/app/signin/page.tsx → the submit handler is now typed
+   (e: SubmitEvent<HTMLFormElement>). React 19's type definitions mark
+   FormEvent as deprecated ("FormEvent doesn't actually exist"); the correct
+   type for a <form onSubmit> handler is SubmitEvent.
+   NOTE: components/wallet/SignInModal.tsx still uses React.FormEvent and is
+   the one remaining place to update if you want to remove the deprecation
+   warning everywhere.
+
+================================================================================
+END OF DOCUMENT (UPDATED EDITION)
+================================================================================
