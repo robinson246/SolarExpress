@@ -12,7 +12,6 @@ const NAV_ITEMS = [
   { href: '/', label: 'Explore' },
   { href: '/booking-history', label: 'My Tickets' },
   { href: '/faq', label: 'FAQ' },
-  { href: '/about', label: 'About' },
 ];
 
 export default function NavBar() {
