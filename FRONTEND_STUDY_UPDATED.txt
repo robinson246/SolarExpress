@@ -4,7 +4,8 @@
  Written for a student preparing to present the frontend to a professor.
 
  UPDATED: reflects the current codebase after removing the mobile view,
- the About page, and the deprecated FormEvent usage in the sign-in page.
+ replacing the deprecated FormEvent usage in the sign-in page, and reshaping
+ the About page to document the dependencies and tools used to develop.
  See the appendix "RECENT CHANGES" at the end of this document.
 ================================================================================
 
@@ -67,9 +68,8 @@ Main screens (routes):
   /signin         → Email login / signup
   /booking-history→ NFT Gallery + Booking History tabs
   /faq            → FAQ accordion
-
-There is intentionally NO /about route — that page was removed to keep the
-app focused on exploration and booking.
+  /about          → About page listing the dependencies and tools used to build
+                    the platform (frontend, backend, dev tools, contracts)
 
 
 ================================================================================
@@ -186,6 +186,7 @@ great thing to show the professor.
    │  ├─ signin/page.tsx       # route "/signin" — login/signup
    │  ├─ booking-history/page.tsx # "/booking-history" — tickets
    │  ├─ faq/page.tsx          # "/faq" — FAQ accordion
+   │  ├─ about/page.tsx        # "/about" — dependencies & tools info
    │  └─ api/nft/...           # SERVER routes that generate NFT art (see 6.7)
    ├─ components/
    │  ├─ layout/               # NavBar
@@ -369,16 +370,34 @@ Block 1 — FAQ_ITEMS data: a nested array of categories each with a list of
   No backend call — the FAQ is static data.
 Block 2 — FAQPage: auth guard, then maps over FAQ_ITEMS and renders native
   HTML <details>/<summary> elements for expandable/collapsible answers, with a
-  chevron that rotates when open. (The footer link to /about was removed
-  together with the About page.)
+  chevron that rotates when open. The footer links to /about ("Learn more
+  about SolarExpress").
+
+--- src/app/about/page.tsx ---
+A static informational page listing the dependencies and tools used to build
+the platform.
+Block 1 — FRONTEND_DEPS: runtime dependencies from package.json (next, react,
+  three, @react-three/fiber, @react-three/drei, wagmi, viem,
+  @tanstack/react-query, @resvg/resvg-js), each with its version and purpose.
+Block 2 — BACKEND_DEPS: dependencies from backend/package.json (express,
+  mongoose, jsonwebtoken, bcryptjs, cookie-parser, helmet,
+  express-rate-limit, cors, dotenv, viem).
+Block 3 — DEV_TOOLS: TypeScript, ESLint, Tailwind CSS v4, sharp, @types/*.
+Block 4 — WORKFLOW_TOOLS: the Node.js maintenance scripts (scripts/), the
+  GitHub Actions CI workflows (.github/workflows), Pinata IPFS, and the
+  Sepolia test network.
+Block 5 — CONTRACTS: the three Solidity smart contracts
+  (SolarExpressTicket.sol, TicketSale.sol, BookingHistory.sol).
+Block 6 — Sections render each list as glass cards with version badges, plus
+  links to the GitHub repo and the FAQ.
 
 --------------------------------------------------------------------
 6.3 REUSABLE UI COMPONENTS (src/components)
 --------------------------------------------------------------------
 
 --- components/layout/NavBar.tsx ---
-Block 1 — NAV_ITEMS: the three main links and their paths (Explore, My
-  Tickets, FAQ). The previous fourth item (About) was removed with the page.
+Block 1 — NAV_ITEMS: the four main links and their paths (Explore, My
+  Tickets, FAQ, About).
 Block 2 — NavBar component reads usePathname() (to highlight the active item),
   useAuth(), useConnection() (wallet), useConnect/useDisconnect, and
   useNotifications().
@@ -968,14 +987,13 @@ Q: How is state shared between components?
 A: React Context (auth, notifications, loading), TanStack Query (server data),
    and a tiny external store (modal-store) read via useSyncExternalStore.
 
-Q: Why did you remove the mobile view and the About page?
+Q: Why did you remove the mobile view?
 A: The app now ships a single desktop-oriented three-column layout
    (menu + 3D scene + booking panel). The mobile-only UI — a 2D planet list
    (MobileExploreView), a bottom navigation bar (MobileBottomNav), a
    mobile planet drawer and bottom-sheet booking panel — and the
-   mobile-detection hook (useMobile) were deleted along with the static
-   /about info page. This simplifies the codebase: one layout, fewer
-   components, less responsive-class complexity.
+   mobile-detection hook (useMobile) were deleted. This simplifies the
+   codebase: one layout, fewer components, less responsive-class complexity.
 
 Q: Security/robustness points you can mention:
    - No secrets in the client (contract addresses & RPC URLs are public by
@@ -1023,14 +1041,18 @@ APPENDIX — RECENT CHANGES (why this UPDATED edition differs from the old one)
        sheet, plus the menuOpen/panelOpen state and useMobile().
      - src/app/layout.tsx → removed <MobileBottomNav/> from the provider nest.
 
-2. Removed the About page.
+2. Removed the About page — then re-added it with a new focus.
    Deleted files:
      - src/app/about/page.tsx  (route /about)
    Changed files:
-     - src/components/layout/NavBar.tsx → NAV_ITEMS now has three links
-       (Explore, My Tickets, FAQ); the About entry was dropped.
+     - src/components/layout/NavBar.tsx → NAV_ITEMS lost the About entry.
      - src/app/faq/page.tsx → removed the "Learn more about SolarExpress"
        footer link that pointed at /about.
+   LATEST: the About page was re-added (src/app/about/page.tsx) with a new
+   purpose — it now lists the dependencies and tools used to develop the
+   platform (frontend & backend runtime deps, dev tools, workflow/CI tooling,
+   and the Solidity contracts). The About link was restored in NavBar.tsx and
+   the FAQ footer link was restored in faq/page.tsx.
 
 3. Fixed the deprecated event type in the sign-in page.
    src/app/signin/page.tsx → the submit handler is now typed

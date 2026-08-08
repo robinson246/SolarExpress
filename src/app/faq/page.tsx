@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import NavBar from '@/components/layout/NavBar';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import Link from 'next/link';
 
 const FAQ_ITEMS = [
   {
@@ -110,6 +111,11 @@ export default function FAQPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className='mt-10 text-center'>
+            <p className='text-xs text-gray-600'>Still have questions?</p>
+            <Link href='/about' className='text-xs text-violet-400 hover:text-violet-300 transition-colors'>Learn more about SolarExpress</Link>
           </div>
         </div>
       </div>
