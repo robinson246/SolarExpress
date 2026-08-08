@@ -172,6 +172,7 @@ npm run dev
 | `NEXT_PUBLIC_SEPOLIA_RPC_URL` | Optional Sepolia RPC endpoint; appended to the built-in fallback list |
 | `API_BACKEND_URL` | Backend API URL used by frontend requests, API routes, and rewrites |
 | `PINATA_JWT` | Pinata JWT for the IPFS mint pipeline (see NFT Metadata Endpoint below; server-side, set in Vercel) |
+| `PRIVATE_KEY` | Deployer wallet private key used by the server to auto-sign `setTokenURI` after a mint (server-side, set in Vercel). Must be the contract owner, and must NOT be committed or exposed to the client |
 
 ### Backend (`.env`)
 
@@ -245,6 +246,11 @@ and marketplaces cannot fetch the metadata.
 - `PINATA_JWT` must be set in the Vercel environment of the frontend project.
   Without it, `/api/nft/generate-metadata` returns `503` and new mints use the
   on-demand route only.
+- `PRIVATE_KEY` (the contract owner's key) must be set in the Vercel
+  environment if you want `setTokenURI` to be signed automatically by the
+  server (`/api/nft/set-token-uri`) instead of popping a MetaMask approval for
+  the owner. Without it, the mint completes but the token keeps the
+  `baseTokenURI`-based rendering.
 - Existing tokens can be retro-migrated to IPFS with:
 
   ```bash

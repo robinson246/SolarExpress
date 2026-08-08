@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useSwitchChain, useChainId, useConnection } from 'wagmi';
-import { TICKET_SALE_ADDRESS, TICKET_SALE_ABI, TICKET_NFT_ADDRESS, TICKET_NFT_ABI } from '@/lib/contract';
+import { TICKET_SALE_ADDRESS, TICKET_SALE_ABI, TICKET_NFT_ADDRESS } from '@/lib/contract';
 import { parseEther, decodeEventLog, createPublicClient, http, fallback } from 'viem';
 import { sepolia } from 'viem/chains';
 import { getTransactionReceipt } from 'viem/actions';
-import { generateNFTMetadata } from '@/lib/nft-service';
+import { generateNFTMetadata, setTokenURIOnChain } from '@/lib/nft-service';
 import { SEPOLIA_RPC_URLS } from '@/lib/rpc';
 import type { TransactionReceipt, Log } from 'viem';
 
@@ -68,14 +68,7 @@ export function useBuyTicket() {
   const checkingRef = useRef(false);
   const purchaseRef = useRef<{ destinationId: number; priceEth: string; travelClass: string } | null>(null);
 
-  const {
-    writeContractAsync,
-    data: txHash,
-    isPending,
-    reset: resetWrite,
-  } = useWriteContract();
-
-  const { writeContractAsync: writeTokenUriAsync } = useWriteContract();
+  const { writeContractAsync, data: txHash, isPending, reset: resetWrite } = useWriteContract();
   const { address: connectedAddress } = useConnection();
 
   const { switchChainAsync } = useSwitchChain();
@@ -163,16 +156,10 @@ export function useBuyTicket() {
             );
             if (result.success && result.metadataUri.startsWith('ipfs://')) {
               try {
-                const uriHash = await writeTokenUriAsync({
-                  address: TICKET_NFT_ADDRESS,
-                  abi: TICKET_NFT_ABI,
-                  functionName: 'setTokenURI',
-                  args: [BigInt(resolvedTokenId), result.metadataUri],
-                  chainId: sepolia.id,
-                });
-                console.log('[useBuyTicket] setTokenURI submitted:', uriHash);
+                const uriResult = await setTokenURIOnChain(resolvedTokenId, result.metadataUri);
+                console.log('[useBuyTicket] setTokenURI submitted:', uriResult.txHash);
               } catch {
-                console.warn('[useBuyTicket] setTokenURI failed (is the connected wallet the contract owner?); keeping baseTokenURI rendering.');
+                console.warn('[useBuyTicket] setTokenURI failed (is PRIVATE_KEY configured on the server?); keeping baseTokenURI rendering.');
                 void warmNftCache(resolvedTokenId);
               }
               return;
@@ -184,7 +171,7 @@ export function useBuyTicket() {
         void warmNftCache(resolvedTokenId);
       })();
     }
-  }, [resolvedIsConfirmed, resolvedTokenId, connectedAddress, writeTokenUriAsync]);
+  }, [resolvedIsConfirmed, resolvedTokenId, connectedAddress]);
 
   async function buyTicket(
     destinationId: number,
